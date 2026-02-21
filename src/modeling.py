@@ -8,9 +8,25 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, least_squares
+import os
+import sys
 
 import src.Exceptions as Exceptions
 from src.analyze import get_plot_preferences, get_num_from_string, prepare_stats_file, range_statistics
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller.
+    Checks current working directory first (allows user-modified files to take precedence),
+    then falls back to the PyInstaller bundle directory (sys._MEIPASS) or the source directory.
+    """
+    cwd_path = os.path.join(os.getcwd(), relative_path)
+    if os.path.exists(cwd_path):
+        return cwd_path
+    try:
+        base_path = sys._MEIPASS  # PyInstaller extracts bundled files here
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 PI = np.pi
 
@@ -182,7 +198,7 @@ def get_calibration_values(which_plot, use_theoretical_vals):
 
     if use_theoretical_vals:        
         # theoretical calibration values for experiment, used in calculating bandwidth shift
-        theoretical_values_df = pd.read_csv("offset_data/theoretical_frequencies.csv", index_col=False)
+        theoretical_values_df = pd.read_csv(resource_path("offset_data/theoretical_frequencies.csv"), index_col=False)
         theoretical_values = theoretical_values_df.filter(like="freq").values.flatten()
         print(f"theo vals: {theoretical_values}")
 
@@ -198,7 +214,7 @@ def get_calibration_values(which_plot, use_theoretical_vals):
         # grab peak frequency values from calibration file as specified in gui
         all_overtones = [get_num_from_string(ov) for ov in which_freq_plots.keys()] # get all overtones to insert 0s into overtones not selected\
         selected_overtones = [get_num_from_string(ov[0]) if ov[1] else 0 for ov in which_freq_plots.items()]
-        exp_vals_df = pd.read_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv", index_col=False).filter(like="freq")
+        exp_vals_df = pd.read_csv(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"), index_col=False).filter(like="freq")
         i = 0
         while(i < len(all_overtones)): # all ovs always >= selected overtones
             print(selected_overtones, all_overtones[i], selected_overtones[i])
@@ -849,7 +865,7 @@ def sauerbrey(use_theoretical_vals):
     # calculate C for Sauerbrey mass formula if user opts to use calibration vals
     C = -17.7 # default theoretical value
     if not use_theoretical_vals:
-        calibration_df = pd.read_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+        calibration_df = pd.read_csv(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"))
         f0 = calibration_df.loc[0]['fundamental_freq']
         print(f"f0: {f0}")
 

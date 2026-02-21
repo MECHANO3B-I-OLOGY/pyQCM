@@ -23,6 +23,20 @@ from src.analyze import analyze_data, ordinal
 from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller.
+    Checks current working directory first (allows user-modified files to take precedence),
+    then falls back to the PyInstaller bundle directory (sys._MEIPASS) or the source directory.
+    """
+    cwd_path = os.path.join(os.getcwd(), relative_path)
+    if os.path.exists(cwd_path):
+        return cwd_path
+    try:
+        base_path = sys._MEIPASS  # PyInstaller extracts bundled files here
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 '''Variable Initializations'''
 class Input:
     """this object will contain all the input dictated by user, and any information needed by subsequent analysis/modelling functions
@@ -331,7 +345,7 @@ class App(tk.Tk):
 
         self.title('BraTaDio - pyQCM-D Analyzer')
         try:
-            self.iconphoto(False, tk.PhotoImage(file="res/m3b_comp.png"))
+            self.iconphoto(False, tk.PhotoImage(file=resource_path("res/m3b_comp.png")))
         except:
             pass
         self.geometry("1200x800")
@@ -392,7 +406,7 @@ class App(tk.Tk):
         # initialize plot customizations with previously saved values
         self.plot_opts_window = PlotOptsWindow
 
-        with open('plot_opts/plot_customizations.json', 'r') as fp:
+        with open(resource_path('plot_opts/plot_customizations.json'), 'r') as fp:
             self.options = json.load(fp)
         self.prev_opts = self.options
 
@@ -827,20 +841,21 @@ class CalibrationWindow():
         if self.calibration_vals_fmt_var.get() == 1: # if inputted FWHM
             calibration_vals = convert_FWHM(calibration_vals)
         print(calibration_vals)
+        os.makedirs(os.path.join(os.getcwd(), 'offset_data'), exist_ok=True)
         try: # if file is removed for some reason, create a new one to fill values with
-            calibration_df = pd.read_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv", index_col=None)
+            calibration_df = pd.read_csv(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"), index_col=None)
         except FileNotFoundError as fnfe:
             print("Offset values file not found, creating new one...")
             # empty first entry in headers for index column
             column_headers = " ,fundamental_freq,fundamental_dis,3rd_freq,3rd_dis,5th_freq,5th_dis,7th_freq,7th_dis,9th_freq,9th_dis,11th_freq,11th_dis,13th_freq,13th_dis\n"
-            with open("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv", 'w') as offset_file:
+            with open(os.path.join(os.getcwd(), "offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"), 'w') as offset_file:
                 offset_file.write(column_headers)
-            calibration_df = pd.read_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv", index_col=None)
+            calibration_df = pd.read_csv(os.path.join(os.getcwd(), "offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"), index_col=None)
             print("Success")
         print(calibration_df)
         calibration_df.loc[0] = calibration_vals
-        calibration_df.to_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv", index=False)
-        print(f"Offset values written succesfully\n: {calibration_df.head()}")
+        calibration_df.to_csv(os.path.join(os.getcwd(), "offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"), index=False)
+        print(f"Offset values written successfully\n: {calibration_df.head()}")
 
 
 class ModelingWindow(tk.Frame):
@@ -1212,7 +1227,7 @@ class PlotOptsWindow():
         self.opts_canv.update_idletasks()
     
     def set_default_values(self):
-        with open('plot_opts/default_opts.json', 'r') as fp:
+        with open(resource_path('plot_opts/default_opts.json'), 'r') as fp:
             default_opts = json.load(fp)
 
         for key in list(default_opts.keys())[1:]:
@@ -1286,7 +1301,8 @@ class PlotOptsWindow():
             self.empty_entries_notif_label.after(5000, lambda: self.empty_entries_notif_label.grid_forget())
             warned_flag = False
 
-        with open('plot_opts/plot_customizations.json', 'w') as fp:
+        os.makedirs(os.path.join(os.getcwd(), 'plot_opts'), exist_ok=True)
+        with open(os.path.join(os.getcwd(), 'plot_opts/plot_customizations.json'), 'w') as fp:
             json.dump(self.options, fp, indent=4)
 
 

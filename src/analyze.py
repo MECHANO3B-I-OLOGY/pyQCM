@@ -24,6 +24,20 @@ import json
 
 import src.Exceptions as Exceptions
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller.
+    Checks current working directory first (allows user-modified files to take precedence),
+    then falls back to the PyInstaller bundle directory (sys._MEIPASS) or the source directory.
+    """
+    cwd_path = os.path.join(os.getcwd(), relative_path)
+    if os.path.exists(cwd_path):
+        return cwd_path
+    try:
+        base_path = sys._MEIPASS  # PyInstaller extracts bundled files here
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 ''' ANALYSIS VARIABLES '''
 class Analysis:
     def __init__(self, fn):
@@ -49,7 +63,7 @@ class Analysis:
 def get_plot_preferences():
     '''opens plot customization json file and returns dictionary of values'''
 
-    with open ("plot_opts/plot_customizations.json", 'r') as fp:
+    with open (resource_path("plot_opts/plot_customizations.json"), 'r') as fp:
         plot_customs = json.load(fp)  
     return plot_customs  
 
@@ -412,7 +426,7 @@ def find_offset_values(df):
     Args:
         df (pd.Dataframe): data frame containing just the data from user spec'd baseline
     """
-    offset_df = pd.read_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+    offset_df = pd.read_csv(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"))
     print(f"** OFFSETS BEFORE:\n{offset_df}")
     offset_dict = {}
     for col in df.columns:
@@ -424,7 +438,8 @@ def find_offset_values(df):
     offset_df = pd.DataFrame(offset_dict, index=['index'])
     print(offset_dict)
     print(f"** OFFSETS FOUND:\n{offset_df}")
-    offset_df.to_csv("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+    os.makedirs(os.path.join(os.getcwd(), 'offset_data'), exist_ok=True)
+    offset_df.to_csv(os.path.join(os.getcwd(), "offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"))
 
 def remove_axis_lines(ax):
     """simple util function to remove axis spines (borders) of axes in subplots

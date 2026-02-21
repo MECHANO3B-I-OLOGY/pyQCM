@@ -7,6 +7,20 @@ from . import Exceptions
 
 from src.format_qsd import read_qsd, extract_sensor_data
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller.
+    Checks current working directory first (allows user-modified files to take precedence),
+    then falls back to the PyInstaller bundle directory (sys._MEIPASS) or the source directory.
+    """
+    cwd_path = os.path.join(os.getcwd(), relative_path)
+    if os.path.exists(cwd_path):
+        return cwd_path
+    try:
+        base_path = sys._MEIPASS  # PyInstaller extracts bundled files here
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 '''lists of col names for frequency and dissipation to be formatted to'''
 freqs = ['fundamental_freq', '3rd_freq', '5th_freq', '7th_freq', '9th_freq', '11th_freq', '13th_freq']
 disps = ['fundamental_dis', '3rd_dis', '5th_dis', '7th_dis', '9th_dis', '11th_dis', '13th_dis']
@@ -323,11 +337,11 @@ def format_raw_data(src_type, data_file, will_use_theoretical_vals):
         elif src_type == 'QCM-i':
             formatted_df = format_QCMi(data_df)
         elif src_type == 'Qsense' and ext == '.qsd':
-            calibration_df = open_df_from_file("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+            calibration_df = open_df_from_file(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"))
             formatted_df = data_df
         elif src_type == 'Qsense' or src_type == 'AWSensors':
             if not will_use_theoretical_vals:
-                calibration_df = open_df_from_file("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+                calibration_df = open_df_from_file(resource_path("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv"))
             else:
                 calibration_df = pd.DataFrame()
             formatted_df = format_Qsense(data_df, calibration_df) if src_type == 'Qsense' else format_AWSensors(data_df, calibration_df)
