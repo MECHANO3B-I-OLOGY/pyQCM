@@ -1,4 +1,6 @@
 .bratadio_venv
+.devcontainer
+.vscode
 
 qcmd-plots/*.png
 qcmd-plots/*.tiff
@@ -17,6 +19,9 @@ raw_data/*
 
 selected_ranges/*
 
+#Qsense files(for testing purposes)
+*.qsd
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -27,6 +32,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.python-version
 build/
 develop-eggs/
 dist/
@@ -49,7 +55,6 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
 
 # Installer logs
 pip-log.txt
