@@ -514,8 +514,11 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
     print("Performing thin film in liquid analysis...")
 
     # grab statistical data of overtones from files generated in interactive plot
-    rf_df = pd.read_csv("selected_ranges/clean_all_stats_rf.csv", index_col=0)
-    dis_df = pd.read_csv("selected_ranges/clean_all_stats_dis.csv", index_col=0)
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    qcmd_modeling_dir = os.path.join(os.getcwd(), 'qcmd-plots', 'modeling')
+    os.makedirs(qcmd_modeling_dir, exist_ok=True)
+    rf_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"), index_col=0)
+    dis_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_dis.csv"), index_col=0)
 
     # grab all unique labels from dataset
     labels = rf_df['range_name'].unique()
@@ -542,7 +545,7 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
         delta_gamma_fit = linear(n_mean_delta_freqs, m, b)
 
         # save calculations to file
-        stats_out_fn = 'selected_ranges/thin_film_liquid_output.csv'                
+        stats_out_fn = os.path.join(selected_ranges_dir, 'thin_film_liquid_output.csv')
         header = f"n*Df,bandwidth_shift,bandwidth_shift_FIT,range_name,data_source\n"
         prepare_stats_file(header, label, sources[0], stats_out_fn)
         with open(stats_out_fn, 'a') as stat_file:
@@ -552,7 +555,7 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
         # save figure
         format_plot(ax, x_label, y_label, title)
         lin_plot.tight_layout() # fixes issue of graph being cut off on the edges when displaying/saving
-        plt.savefig(f"qcmd-plots/modeling/thin_film_liquid_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+        plt.savefig(os.path.join(qcmd_modeling_dir, f"thin_film_liquid_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
         print("Thin film in liquid analysis complete")
         plt.rc('text', usetex=False)
 
@@ -577,8 +580,11 @@ def thin_film_air_analysis(which_plot, use_theoretical_vals, latex_installed):
     print("Performing thin film in liquid analysis...")
 
     # grab statistical data of overtones from files generated in interactive plot
-    rf_df = pd.read_csv("selected_ranges/clean_all_stats_rf.csv", index_col=0)
-    dis_df = pd.read_csv("selected_ranges/clean_all_stats_dis.csv", index_col=0)
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    qcmd_modeling_dir = os.path.join(os.getcwd(), 'qcmd-plots', 'modeling')
+    os.makedirs(qcmd_modeling_dir, exist_ok=True)
+    rf_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"), index_col=0)
+    dis_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_dis.csv"), index_col=0)
 
     # grab all unique labels from dataset
     labels = rf_df['range_name'].unique()
@@ -621,7 +627,7 @@ def thin_film_air_analysis(which_plot, use_theoretical_vals, latex_installed):
         # save figure
         format_plot(ax, x_label, y_label, title)
         lin_plot.tight_layout() # fixes issue of graph being cut off on the edges when displaying/saving
-        plt.savefig(f"qcmd-plots/modeling/thin_film_air_GAMMA_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+        plt.savefig(os.path.join(qcmd_modeling_dir, f"thin_film_air_GAMMA_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
         
         # repeat above plotting/saving for Df/n v n^2
         data_label, x_label, y_label, title = get_labels(label, 'film_air', 'freq', latex_installed)     
@@ -633,7 +639,7 @@ def thin_film_air_analysis(which_plot, use_theoretical_vals, latex_installed):
         delta_freq_norm_fit = linear(sq_overtones, dG_m, dG_b)
 
         # save calculations to file
-        stats_out_fn = 'selected_ranges/thin_film_air_output.csv'                
+        stats_out_fn = os.path.join(selected_ranges_dir, 'thin_film_air_output.csv')
         header = f"sq_overtones,delta_gamma_norm,delta_gamma_norm_fit,delta_freqs_norm,delta_freq_norm_fit,range_name,data_source\n"
         prepare_stats_file(header, label, sources[0], stats_out_fn)
         with open(stats_out_fn, 'a') as stat_file:
@@ -643,7 +649,7 @@ def thin_film_air_analysis(which_plot, use_theoretical_vals, latex_installed):
         # save figure
         format_plot(ax, x_label, y_label, title)
         lin_plot.tight_layout() # fixes issue of graph being cut off on the edges when displaying/saving
-        plt.savefig(f"qcmd-plots/modeling/thin_film_air_FREQ_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+        plt.savefig(os.path.join(qcmd_modeling_dir, f"thin_film_air_FREQ_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
         print("Thin film in air analysis complete")
         plt.rc('text', usetex=False)
@@ -674,10 +680,11 @@ def gordon_kanazawa(user_input):
 
     # for saving output data
     header = "overtone,average_Df,average_Df_n,kinematic_viscosity,range_name,data_source\n"
-    stats_out_fn = 'selected_ranges/gordon-kanazawa_output.csv'                
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    stats_out_fn = os.path.join(selected_ranges_dir, 'gordon-kanazawa_output.csv')
 
     # grab data from file
-    stats_df = pd.read_csv("selected_ranges/clean_all_stats_rf.csv")
+    stats_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"))
     stats_df = stats_df[(stats_df!= 0).all(1)] # remove freq rows with 0 (unselected rows)
     labels = stats_df['range_name'].unique()
     print(labels)
@@ -750,9 +757,12 @@ def crystal_thickness(which_plot, will_use_theoretical_vals):
     format_plot(crystal_ax, x_label, y_label, title, np.asarray(overtones))
 
     crystal_fig.tight_layout()
-    crystal_fig.savefig(f"qcmd-plots/modeling/crystal_thickness.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+    qcmd_modeling_dir = os.path.join(os.getcwd(), 'qcmd-plots', 'modeling')
+    os.makedirs(qcmd_modeling_dir, exist_ok=True)
+    crystal_fig.savefig(os.path.join(qcmd_modeling_dir, f"crystal_thickness.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
-    stats_out_fn = 'selected_ranges/crystal_thickness_output.csv'                
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    stats_out_fn = os.path.join(selected_ranges_dir, 'crystal_thickness_output.csv')
     header = f"overtone,offset_vals,offset_vals_FIT,crystal_thickness(mm)\n"
     with open(stats_out_fn, 'w') as stat_file:
         stat_file.write(header)
@@ -794,7 +804,7 @@ def sauerbrey_avgs(mu_Df, delta_mu_Df, C, overtones, label, fig_format, dpi):
     avg_Dm_fig, avg_Dm_ax = plot_data(overtones, mu_Dm, None, delta_mu_Dm, data_label, True)
     format_plot(avg_Dm_ax, x_label, y_label, title, overtones)
     avg_Dm_fig.tight_layout()
-    plt.savefig(f"qcmd-plots/modeling/Sauerbrey_avgs_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+    plt.savefig(os.path.join(os.path.join(os.getcwd(), 'qcmd-plots', 'modeling'), f"Sauerbrey_avgs_range_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
     return mu_Dm, delta_mu_Dm
 
@@ -843,7 +853,7 @@ def sauerbrey_fit(df, overtones, label, C, fig_format, dpi):
     format_plot(avg_Df_ax, x_label, y_label, title, overtones)
     avg_Df_fig.tight_layout()
     plt.legend().get_texts()[1].set_text("Sauerbrey mass: " + f"{m*C:.1f}" + r" ($\frac{ng}{cm^2}$)")
-    plt.savefig(f"qcmd-plots/modeling/Sauerbrey_fit_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+    plt.savefig(os.path.join(os.path.join(os.getcwd(), 'qcmd-plots', 'modeling'), f"Sauerbrey_fit_range_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
     return mu_Df, delta_mu_Df, mu_Df_fit
 
@@ -854,7 +864,8 @@ def sauerbrey(use_theoretical_vals):
     print("Analyzing Sauerbrey equation...")
 
     # grabbing df from csv
-    df = pd.read_csv("selected_ranges/clean_all_stats_rf.csv")
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"))
     df = df[(df!= 0).all(1)] # remove freq rows with 0 (unselected rows)
     labels = df['range_name'].unique()
     overtones = df['overtone'].unique() # overtone number (x)
@@ -880,7 +891,7 @@ def sauerbrey(use_theoretical_vals):
         mu_Dm, delta_mu_Dm = sauerbrey_avgs(mu_Df, delta_mu_Df, C, overtones, label, fig_format, dpi)
 
         # save calculations to file
-        stats_out_fn = 'selected_ranges/sauerbrey_output.csv'                
+        stats_out_fn = os.path.join(selected_ranges_dir, 'sauerbrey_output.csv')
         header = f"overtone,avg_Df,avg_Df_err,avg_Df_FIT,avg_Dm,avg_Dm_err,C,range_name,data_source\n"
         prepare_stats_file(header, label, sources[0], stats_out_fn)
         with open(stats_out_fn, 'a') as stat_file:
@@ -902,9 +913,12 @@ def avgs_analysis():
     print("Analyzing average change in frequency and dissipation...")
 
     # grabbing df from csv
-    rf_df = pd.read_csv("selected_ranges/clean_all_stats_rf.csv")
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    qcmd_modeling_dir = os.path.join(os.getcwd(), 'qcmd-plots', 'modeling')
+    os.makedirs(qcmd_modeling_dir, exist_ok=True)
+    rf_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"))
     rf_df = rf_df[(rf_df!= 0).all(1)] # remove freq rows with 0 (unselected rows)
-    dis_df = pd.read_csv("selected_ranges/clean_all_stats_dis.csv")
+    dis_df = pd.read_csv(os.path.join(selected_ranges_dir, "clean_all_stats_dis.csv"))
     dis_df = dis_df[(dis_df!= 0).all(1)] # remove dis rows with 0 (unselected rows)
     labels = rf_df['range_name'].unique()
     overtones = rf_df['overtone'].unique() # overtone number (x)
@@ -929,14 +943,14 @@ def avgs_analysis():
         avg_Df_range_plot, ax = plot_data(overtones, mu_Df, None, delta_mu_Df, data_label, True)
         format_plot(ax, x_label, y_label, title, overtones)
         avg_Df_range_plot.tight_layout()
-        plt.savefig(f"qcmd-plots/modeling/Avg_Df_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+        plt.savefig(os.path.join(qcmd_modeling_dir, f"Avg_Df_range_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
         # plotting average dissipations
         data_label, x_label, y_label, title = get_labels(label, 'avgs', 'dis')
         avg_Dd_range_plot, ax = plot_data(overtones, mu_Dd, None, delta_mu_Dd, data_label, True)
         format_plot(ax, x_label, y_label, title, overtones)
         avg_Dd_range_plot.tight_layout()
-        plt.savefig(f"qcmd-plots/modeling/Avg_Dd_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
+        plt.savefig(os.path.join(qcmd_modeling_dir, f"Avg_Dd_range_{label}.{fig_format}"), format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
     print("Average change in frequency and dissipation analysis complete")
     plt.rc('text', usetex=False)

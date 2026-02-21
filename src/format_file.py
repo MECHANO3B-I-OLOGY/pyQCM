@@ -351,7 +351,9 @@ def format_raw_data(src_type, data_file, will_use_theoretical_vals):
     
     print(file_name)
     print(f"*** After formatting\n{formatted_df}")
-    formatted_df.to_csv(f"raw_data/Formatted-{file_name}.csv", index=False)
+    raw_data_dir = os.path.join(os.getcwd(), 'raw_data')
+    os.makedirs(raw_data_dir, exist_ok=True)
+    formatted_df.to_csv(os.path.join(raw_data_dir, f"Formatted-{file_name}.csv"), index=False)
 
 
 if __name__ == '__main__':

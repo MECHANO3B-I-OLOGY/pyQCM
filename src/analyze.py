@@ -46,7 +46,7 @@ class Analysis:
         if fn.__contains__("Formatted"):
             self.formatted_fn = fn
         else:
-            self.formatted_fn = f"raw_data/Formatted-{file_name}.csv"
+            self.formatted_fn = os.path.join(os.getcwd(), 'raw_data', f"Formatted-{file_name}.csv")
         
         print(f"Using formatted file: {self.formatted_fn}")
 
@@ -306,7 +306,7 @@ def plot_temp_v_time(fig, ax, time, temp, x_scale):
     plot_prefs = get_plot_preferences()
     points_idx = plot_prefs['points_plotted_index']
     ax.plot(time[::points_idx], temp[::points_idx], '.', markersize=1)
-    setup_plot(fig, ax, determine_xlabel(x_scale), r"Temperature, $\it{t}$ °C", "QCM-D Temperature vs Time", "qcmd-plots/temp_vs_time_plot", True, False)
+    setup_plot(fig, ax, determine_xlabel(x_scale), r"Temperature, $\it{t}$ °C", "QCM-D Temperature vs Time", os.path.join(os.getcwd(), "qcmd-plots", "temp_vs_time_plot"), True, False)
 
 # check if label and file already exists and remove if it does before writing new data for that range
 # this allows for overwriting of only the currently selected file and frequency,
@@ -370,8 +370,10 @@ def range_statistics(df, imin, imax, overtone_sel, which_range, which_fmt, fn):
             which_overtones.append(ov[0])
     
     # open stat files, either raw or clean as spec'd by user in var 'which_fmt'
-    dis_stat_file = open(f"selected_ranges/{which_fmt.upper()}_all_stats_dis.csv", 'a')
-    rf_stat_file = open(f"selected_ranges/{which_fmt.upper()}_all_stats_rf.csv", 'a')
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    os.makedirs(selected_ranges_dir, exist_ok=True)
+    dis_stat_file = open(os.path.join(selected_ranges_dir, f"{which_fmt.upper()}_all_stats_dis.csv"), 'a')
+    rf_stat_file = open(os.path.join(selected_ranges_dir, f"{which_fmt.upper()}_all_stats_rf.csv"), 'a')
 
     # statistical analysis for all desired overtones using range of selection
     x_data = df["Time"]
@@ -684,13 +686,15 @@ def update_interactive_plot(spans, int_plot, int_ax1_zoom, int_ax2_zoom, plot_cu
 def interactive_plot_analysis(fn, df, range, imin, imax, which_plot, which_fmt):
     """prepares, generates, and saves statistical calculations of int plot selected data"""
     # prep and save data to file
+    selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+    os.makedirs(selected_ranges_dir, exist_ok=True)
     # frequency stats for bandwidth shift
-    stats_out_fn = f'selected_ranges/{which_fmt}_all_stats_rf.csv'
+    stats_out_fn = os.path.join(selected_ranges_dir, f'{which_fmt}_all_stats_rf.csv')
     header = f"overtone,Dfreq_average,Dfreq_std_dev,Dfreq_median,range_name,x_lower,x_upper,data_source\n"
     prepare_stats_file(header, range[which_fmt], fn, stats_out_fn)
     
     # dissipation stats for bandwidth shift
-    stats_out_fn = f'selected_ranges/{which_fmt}_all_stats_dis.csv'
+    stats_out_fn = os.path.join(selected_ranges_dir, f'{which_fmt}_all_stats_dis.csv')
     header = f"overtone,Ddis_average,Ddis_std_dev,Ddis_median,range_name,x_lower,x_upper,data_source\n"
     prepare_stats_file(header, range[which_fmt], fn, stats_out_fn)
 
@@ -984,12 +988,14 @@ def analyze_data(input):
             plot_temp_v_time(tempVtime_fig, tempVtime_ax, temperature_df[analysis.temp_time_col].values, temperature_df[analysis.temp_col].values, plot_customs['time_scale'])    
 
         # Titles, lables, etc. for plots
+        qcmd_plots_dir = os.path.join(os.getcwd(), 'qcmd-plots')
+        os.makedirs(qcmd_plots_dir, exist_ok=True)
         rf_fig_title = "QCM-D Resonant Frequency"
-        rf_fn = "qcmd-plots/resonant-freq-plot"
+        rf_fn = os.path.join(qcmd_plots_dir, "resonant-freq-plot")
         fig_x = determine_xlabel(plot_customs['time_scale'])
 
         dis_fig_title = "QCM-D Dissipation"
-        dis_fn = f"qcmd-plots/dissipation-plot"
+        dis_fn = os.path.join(qcmd_plots_dir, "dissipation-plot")
 
         # format and save figures
         setup_plot(freq_fig, freq_ax, fig_x, determine_ylabel('freq', input.will_normalize_F),
@@ -997,14 +1003,14 @@ def analyze_data(input):
         setup_plot(dis_fig, dis_ax, fig_x, determine_ylabel('dis', input.will_normalize_F),
                    dis_fig_title, dis_fn)
         
-        freq_fig.savefig(f"qcmd-plots/frequency_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
-        dis_fig.savefig(f"qcmd-plots/dissipation_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+        freq_fig.savefig(os.path.join(qcmd_plots_dir, f"frequency_plot.{plot_customs['fig_format']}"), format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+        dis_fig.savefig(os.path.join(qcmd_plots_dir, f"dissipation_plot.{plot_customs['fig_format']}"), format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
         
         if input.will_plot_dD_v_dF:
-            dVf_fn = f"qcmd-plots/disp_V_freq-plot"
+            dVf_fn = os.path.join(qcmd_plots_dir, "disp_V_freq-plot")
             setup_plot(disVfreq_fig, disVfreq_ax, determine_ylabel('freq', input.will_normalize_F), determine_ylabel('dis', input.will_normalize_F),
                        dis_fig_title, dVf_fn)
-            disVfreq_fig.savefig(f"qcmd-plots/disp_V_freq_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+            disVfreq_fig.savefig(os.path.join(qcmd_plots_dir, f"disp_V_freq_plot.{plot_customs['fig_format']}"), format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
             
 
         # saving multiaxis plot.
@@ -1012,7 +1018,7 @@ def analyze_data(input):
             box = mult_ax1.get_position()
             mult_ax1.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
             mult_fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.1), ncol=2, fancybox=True, shadow=True, fontsize=plot_customs['legend_text_size'], prop={'family': 'Arial'}, framealpha=0.1)
-            mult_fig.savefig(f"qcmd-plots/freq_dis_V_time.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi*1.25) # slightly higher dpi for dense graph
+            mult_fig.savefig(os.path.join(qcmd_plots_dir, f"freq_dis_V_time.{plot_customs['fig_format']}"), format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi*1.25) # slightly higher dpi for dense graph
 
     # Gathering raw data for individual plots
     if input.will_plot_raw_data:
@@ -1045,12 +1051,12 @@ def analyze_data(input):
             raw_dis_ax.plot(x_time[::points_idx], y_dis[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_disps[i])), color=dis_color_map[raw_disps[i]])
             
         # save raw frequency plots
-        rf_fn = f"qcmd-plots/RAW-resonant-freq-plot"
+        rf_fn = os.path.join(qcmd_plots_dir, "RAW-resonant-freq-plot")
         setup_plot(raw_freq_fig, raw_freq_ax, fig_x, determine_ylabel('freq', False, True), rf_fig_title, rf_fn, plot_customs['fig_format'])
         raw_freq_fig.savefig(rf_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 
         # save raw dissipation plots
-        dis_fn = f"qcmd-plots/RAW-dissipation-plot"
+        dis_fn = os.path.join(qcmd_plots_dir, "RAW-dissipation-plot")
         setup_plot(raw_dis_fig, raw_dis_ax, fig_x, determine_ylabel('dis', False, True), dis_fig_title, dis_fn,  plot_customs['fig_format'])
         raw_dis_fig.savefig(dis_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 

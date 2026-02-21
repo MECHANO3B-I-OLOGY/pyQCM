@@ -1673,8 +1673,7 @@ class Col4(tk.Frame):
         global input
         print("***FINAL",input.which_plot)
         # make sure modelling output folder exists
-        if not os.path.exists('qcmd-plots/modeling/'):
-            os.makedirs('qcmd-plots/modeling/')
+        os.makedirs(os.path.join(os.getcwd(), 'qcmd-plots', 'modeling'), exist_ok=True)
         err_check()
         try:
             input.interactive_plot_overtone['clean'] = int(self.interactive_plot_overtone_select.get())
@@ -1695,14 +1694,16 @@ class Col4(tk.Frame):
 
     def clear_range_data(self):
         set_input_altered_flag(True)
-        rf_clean_stats = open("selected_ranges/clean_all_stats_rf.csv", 'w')
-        dis_clean_stats = open("selected_ranges/clean_all_stats_dis.csv", 'w')
-        rf_raw_stats = open("selected_ranges/raw_all_stats_rf.csv", 'w')
-        dis_raw_stats = open("selected_ranges/raw_all_stats_dis.csv", 'w')
-        sauerbray_stats = open("selected_ranges/Sauerbrey_stats.csv", 'w')
-        sauerbrey_ranges = open("selected_ranges/Sauerbrey_ranges.csv", 'w')
-        tfa = open("selected_ranges/thin_film_air_output.csv", 'w')
-        tfl = open("selected_ranges/thin_film_liquid_output.csv", 'w')
+        selected_ranges_dir = os.path.join(os.getcwd(), 'selected_ranges')
+        os.makedirs(selected_ranges_dir, exist_ok=True)
+        rf_clean_stats = open(os.path.join(selected_ranges_dir, "clean_all_stats_rf.csv"), 'w')
+        dis_clean_stats = open(os.path.join(selected_ranges_dir, "clean_all_stats_dis.csv"), 'w')
+        rf_raw_stats = open(os.path.join(selected_ranges_dir, "raw_all_stats_rf.csv"), 'w')
+        dis_raw_stats = open(os.path.join(selected_ranges_dir, "raw_all_stats_dis.csv"), 'w')
+        sauerbray_stats = open(os.path.join(selected_ranges_dir, "Sauerbrey_stats.csv"), 'w')
+        sauerbrey_ranges = open(os.path.join(selected_ranges_dir, "Sauerbrey_ranges.csv"), 'w')
+        tfa = open(os.path.join(selected_ranges_dir, "thin_film_air_output.csv"), 'w')
+        tfl = open(os.path.join(selected_ranges_dir, "thin_film_liquid_output.csv"), 'w')
         files = [rf_clean_stats, dis_clean_stats, rf_raw_stats, dis_raw_stats, sauerbray_stats, sauerbrey_ranges, tfa, tfl]
         for file in files:
             file.write('')
