@@ -32,7 +32,7 @@ exe = EXE(
     a.zipfiles, # Critical for onefile stability
     a.datas,
     [],
-    name='pyQCM',
+    name='pyQCMWindows',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
