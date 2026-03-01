@@ -21,10 +21,10 @@ jobs:
           pip install pandas==1.4.3 numpy==1.24.3 matplotlib==3.8.4 scipy==1.9.3 datetime==4.7 xlrd==2.0.1 openpyxl==3.1.4
 
       - name: Build EXE
-        run: pyinstaller pyQCM.spec
+        run: pyinstaller windowsExec.spec
 
       - name: Upload Executable
         uses: actions/upload-artifact@v4
         with:
           name: pyQCM-Windows-Build
-          path: dist/pyQCM.exe
+          path: dist/pyQCMWindows.exe
