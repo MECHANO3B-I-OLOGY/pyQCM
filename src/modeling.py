@@ -351,7 +351,7 @@ def linearly_analyze(x, y, ax, label_prefix='', label_postfix=''):
 
     # put label together
     if label_prefix == '' and label_postfix == '':
-        label = f'Linear fit:\ny = {m:.4f}x {sign} {np.abs(b):.4f}'
+        label = f'Linear fit:\ny = {m:.4f}x {sign} {np.abs(b):.4f}\nR² = {rSquared:.4f}'
     else:
         label = label_prefix + f"{m:.4e} " + label_postfix
     
@@ -825,8 +825,19 @@ def sauerbrey_fit(df, overtones, label, C, fig_format, dpi):
     mu_Df_fit = linear(overtones, m, b)
 
     format_plot(avg_Df_ax, x_label, y_label, title, overtones)
+
+    # Create a invisible rectangle to act as a text-only legend handle
+    mass_text = f"Sauerbrey mass: {m*C:.1f} " + r"($\frac{ng}{cm^2}$)"
+    blank_handle = plt.Rectangle((0, 0), 0, 0, lw=0, fill=False, label=mass_text)
+
+    # Get existing handles/labels (Data points + Fit line)
+    handles, labels = avg_Df_ax.get_legend_handles_labels()
+
+    # Append our blank handle and re-draw the legend
+    avg_Df_ax.legend(handles=handles + [blank_handle], loc='best')
+
     avg_Df_fig.tight_layout()
-    plt.legend().get_texts()[1].set_text("Sauerbrey mass: " + f"{m*C:.1f}" + r" ($\frac{ng}{cm^2}$)")
+    # plt.legend().get_texts()[1].set_text("Sauerbrey mass: " + f"{m*C:.1f}" + r" ($\frac{ng}{cm^2}$)")
     plt.savefig(f"qcmd-plots/modeling/Sauerbrey_fit_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
     return mu_Df, delta_mu_Df, mu_Df_fit
