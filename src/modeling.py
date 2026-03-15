@@ -529,12 +529,6 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
         compliance_text = f"Shear dependent compliance (assuming water): {m*(-100/math.pi):.1f} " +  r'$\frac{1}{MPa}$'"
         blank_handle = plt.Rectangle((0, 0), 0, 0, lw=0, fill=False, label=compliance_text)
 
-        # Get existing handles/labels (Data points + Fit line)
-        handles, labels = avg_Df_ax.get_legend_handles_labels()
-
-        # Append our blank handle and re-draw the legend
-        avg_Df_ax.legend(handles=handles + [blank_handle], loc='best')
-
         delta_gamma_fit = linear(n_mean_delta_freqs, m, b)
 
         # save calculations to file
@@ -547,6 +541,13 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
 
         # save figure
         format_plot(ax, x_label, y_label, title)
+
+        # Get existing handles/labels (Data points + Fit line)
+        handles, labels = ax.get_legend_handles_labels()
+
+        # Append our blank handle and re-draw the legend
+        ax.legend(handles=handles + [blank_handle], loc='best')
+
         lin_plot.tight_layout() # fixes issue of graph being cut off on the edges when displaying/saving
         plt.savefig(f"qcmd-plots/modeling/thin_film_liquid_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
         print("Thin film in liquid analysis complete")
