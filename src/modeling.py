@@ -1,4 +1,4 @@
-"""
+f"""
 Author: Brandon Pardi
 Created: 12/30/2022
 Last Modified: 1/5/2024
@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, least_squares
+import math
 
 import src.Exceptions as Exceptions
 from src.analyze import get_plot_preferences, get_num_from_string, prepare_stats_file, range_statistics
@@ -522,7 +523,18 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
                                  sigma_delta_gamma, data_label, True)
         
         # take care of all linear fitting analysis 
-        m, b = linearly_analyze(n_mean_delta_freqs, delta_gamma, ax, 'Shear dependent compliance: ', r'$\frac{1}{Pa}$')
+        m, b = linearly_analyze(n_mean_delta_freqs, delta_gamma, ax,)
+
+        # Create a invisible rectangle to act as a text-only legend handle
+        compliance_text = f"Shear dependent compliance (assuming water): {m*(-100/math.pi):.1f} " +  r'$\frac{1}{MPa}$'"
+        blank_handle = plt.Rectangle((0, 0), 0, 0, lw=0, fill=False, label=compliance_text)
+
+        # Get existing handles/labels (Data points + Fit line)
+        handles, labels = avg_Df_ax.get_legend_handles_labels()
+
+        # Append our blank handle and re-draw the legend
+        avg_Df_ax.legend(handles=handles + [blank_handle], loc='best')
+
         delta_gamma_fit = linear(n_mean_delta_freqs, m, b)
 
         # save calculations to file
