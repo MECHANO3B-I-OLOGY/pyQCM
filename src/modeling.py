@@ -473,9 +473,9 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     #dis_w_err = [np.array(mean_delta_dis), np.array(sigma_mean_delta_dis)]
     delta_gamma = np.array(mean_delta_dis * calibration_freq / 2) # bandwidth shift, Γ
     
-    # Scale the displacement standard deviation to calculate the bandwidth shift 
-    # (Delta Gamma) error, normalized by the fundamental frequency.
-    sigma_delta_gamma = sigma_mean_delta_dis * (calibration_freq / 2)
+    # due to refactor there is no y error only x, this means no mult error prop needed, the error is just x err times delta_gamma
+    #sigma_delta_gamma = propogate_bandwidth_err(delta_gamma, dis_w_err)
+    sigma_delta_gamma = delta_gamma * sigma_mean_delta_dis #this code may need to be changed to sigma_delta_gamma = sigma_mean_delta_dis * (calibration_freq / 2)
 
     # remove entries of freqs not being analyzed
     arrs = [delta_gamma, sigma_delta_gamma, np.array(n_mean_delta_freqs), np.array(sigma_n_mean_delta_freqs)]
