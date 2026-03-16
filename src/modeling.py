@@ -475,7 +475,7 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     
     # Scale the displacement standard deviation to calculate the bandwidth shift 
     # (Delta Gamma) error, normalized by the fundamental frequency.
-    sigma_delta_gamma = np.array(sigma_mean_delta_dis) * (calibration_freq / 2)
+    sigma_delta_gamma = np.array(sigma_mean_delta_dis * calibration_freq / 2)
 
     # remove entries of freqs not being analyzed
     arrs = [delta_gamma, sigma_delta_gamma, np.array(n_mean_delta_freqs), np.array(sigma_n_mean_delta_freqs)]
