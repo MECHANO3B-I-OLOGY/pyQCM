@@ -458,15 +458,16 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     print("###", mean_delta_freqs, sigma_mean_delta_freqs)
     n_mean_delta_freqs = [Df * (2*i+1) for i, Df in enumerate(mean_delta_freqs)] # 2i+1 corresponds to overtone number
     sigma_n_mean_delta_freqs = [sDf * (2*i+1) for i, sDf in enumerate(sigma_mean_delta_freqs)] 
-    mean_delta_dis, sigma_mean_delta_dis = avg_and_propogate(label, sources, dis_df, False)        
+    mean_delta_dis, sigma_mean_delta_dis = avg_and_propogate(label, sources, dis_df, False)  
     
-    print(f"*** rf for label: {label}\n\tn*means: {n_mean_delta_freqs}\n\tstddev: {sigma_n_mean_delta_freqs}\n")
-    print(f"*** dis for label: {label}:\n\tmeans: {mean_delta_dis}\n\tstddev: {sigma_mean_delta_dis}\n")
-
     # If the dissipation values are > 1, they are likely already scaled by 1e6
     if np.any(mean_delta_dis > 0.1): 
         print("WARNING: Dissipation appears pre-scaled. Dividing by 1e6 to normalize.")
         mean_delta_dis = mean_delta_dis / 1e6
+        sigma_mean_delta_dis = sigma_mean_delta_dis / 1e6
+    
+    print(f"*** rf for label: {label}\n\tn*means: {n_mean_delta_freqs}\n\tstddev: {sigma_n_mean_delta_freqs}\n")
+    print(f"*** dis for label: {label}:\n\tmeans: {mean_delta_dis}\n\tstddev: {sigma_mean_delta_dis}\n")
 
     # calculate bandwidth shift and propogate error for this calculation
     #dis_w_err = [np.array(mean_delta_dis), np.array(sigma_mean_delta_dis)]
@@ -474,7 +475,7 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     
     # due to refactor there is no y error only x, this means no mult error prop needed, the error is just x err times delta_gamma
     #sigma_delta_gamma = propogate_bandwidth_err(delta_gamma, dis_w_err)
-    sigma_delta_gamma = delta_gamma * sigma_mean_delta_dis
+    sigma_delta_gamma = delta_gamma * sigma_mean_delta_dis #this code may need to be changed to sigma_delta_gamma = sigma_mean_delta_dis * (calibration_freq / 2)
 
     # remove entries of freqs not being analyzed
     arrs = [delta_gamma, sigma_delta_gamma, np.array(n_mean_delta_freqs), np.array(sigma_n_mean_delta_freqs)]
