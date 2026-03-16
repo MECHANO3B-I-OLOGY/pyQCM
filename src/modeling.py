@@ -463,6 +463,11 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     print(f"*** rf for label: {label}\n\tn*means: {n_mean_delta_freqs}\n\tstddev: {sigma_n_mean_delta_freqs}\n")
     print(f"*** dis for label: {label}:\n\tmeans: {mean_delta_dis}\n\tstddev: {sigma_mean_delta_dis}\n")
 
+    # If the dissipation values are > 1, they are likely already scaled by 1e6
+    if np.any(mean_delta_dis > 0.1): 
+        print("WARNING: Dissipation appears pre-scaled. Dividing by 1e6 to normalize.")
+        mean_delta_dis = mean_delta_dis / 1e6
+
     # calculate bandwidth shift and propogate error for this calculation
     #dis_w_err = [np.array(mean_delta_dis), np.array(sigma_mean_delta_dis)]
     delta_gamma = np.array(mean_delta_dis * calibration_freq / 2) # bandwidth shift, Γ
