@@ -351,7 +351,7 @@ def linearly_analyze(x, y, ax, label_prefix='', label_postfix=''):
 
     # put label together
     if label_prefix == '' and label_postfix == '':
-        label = f'Linear fit:\ny = {m:.4f}x {sign} {np.abs(b):.4f}'
+        label = f'Linear fit:\ny = {m:.4f}x {sign} {np.abs(b):.4f}\nR² = {rSquared:.4f}'
     else:
         label = label_prefix + f"{m:.4e} " + label_postfix
     
@@ -458,7 +458,13 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     print("###", mean_delta_freqs, sigma_mean_delta_freqs)
     n_mean_delta_freqs = [Df * (2*i+1) for i, Df in enumerate(mean_delta_freqs)] # 2i+1 corresponds to overtone number
     sigma_n_mean_delta_freqs = [sDf * (2*i+1) for i, sDf in enumerate(sigma_mean_delta_freqs)] 
-    mean_delta_dis, sigma_mean_delta_dis = avg_and_propogate(label, sources, dis_df, False)        
+    mean_delta_dis, sigma_mean_delta_dis = avg_and_propogate(label, sources, dis_df, False)  
+    
+    # If the dissipation values are > 1, they are likely already scaled by 1e6
+    if np.any(mean_delta_dis > 0.1): 
+        print("WARNING: Dissipation appears pre-scaled. Dividing by 1e6 to normalize.")
+        mean_delta_dis = mean_delta_dis / 1e6
+        sigma_mean_delta_dis = sigma_mean_delta_dis / 1e6
     
     print(f"*** rf for label: {label}\n\tn*means: {n_mean_delta_freqs}\n\tstddev: {sigma_n_mean_delta_freqs}\n")
     print(f"*** dis for label: {label}:\n\tmeans: {mean_delta_dis}\n\tstddev: {sigma_mean_delta_dis}\n")
@@ -469,7 +475,7 @@ def process_bandwidth_calculations_for_linear_regression(which_plot, sources, rf
     
     # due to refactor there is no y error only x, this means no mult error prop needed, the error is just x err times delta_gamma
     #sigma_delta_gamma = propogate_bandwidth_err(delta_gamma, dis_w_err)
-    sigma_delta_gamma = delta_gamma * sigma_mean_delta_dis
+    sigma_delta_gamma = delta_gamma * sigma_mean_delta_dis #this code may need to be changed to sigma_delta_gamma = sigma_mean_delta_dis * (calibration_freq / 2)
 
     # remove entries of freqs not being analyzed
     arrs = [delta_gamma, sigma_delta_gamma, np.array(n_mean_delta_freqs), np.array(sigma_n_mean_delta_freqs)]
@@ -522,7 +528,12 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
                                  sigma_delta_gamma, data_label, True)
         
         # take care of all linear fitting analysis 
-        m, b = linearly_analyze(n_mean_delta_freqs, delta_gamma, ax, 'Shear dependent compliance: ', r'$\frac{1}{Pa}$')
+        m, b = linearly_analyze(n_mean_delta_freqs, delta_gamma, ax,)
+
+        # Create a invisible rectangle to act as a text-only legend handle
+        compliance_text = f"Shear dependent compliance (assuming water): {m*(-100/PI):.1f} " +  r"($\frac{1}{MPa}$)"
+        blank_handle = plt.Rectangle((0, 0), 0, 0, lw=0, fill=False, label=compliance_text)
+
         delta_gamma_fit = linear(n_mean_delta_freqs, m, b)
 
         # save calculations to file
@@ -535,6 +546,13 @@ def thin_film_liquid_analysis(which_plot, use_theoretical_vals, latex_installed)
 
         # save figure
         format_plot(ax, x_label, y_label, title)
+
+        # Get existing handles/labels (Data points + Fit line)
+        handles, labels = ax.get_legend_handles_labels()
+
+        # Append our blank handle and re-draw the legend
+        ax.legend(handles=handles + [blank_handle], loc='best')
+
         lin_plot.tight_layout() # fixes issue of graph being cut off on the edges when displaying/saving
         plt.savefig(f"qcmd-plots/modeling/thin_film_liquid_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
         print("Thin film in liquid analysis complete")
@@ -825,8 +843,19 @@ def sauerbrey_fit(df, overtones, label, C, fig_format, dpi):
     mu_Df_fit = linear(overtones, m, b)
 
     format_plot(avg_Df_ax, x_label, y_label, title, overtones)
+
+    # Create a invisible rectangle to act as a text-only legend handle
+    mass_text = f"Sauerbrey mass: {m*C:.1f} " + r"($\frac{ng}{cm^2}$)"
+    blank_handle = plt.Rectangle((0, 0), 0, 0, lw=0, fill=False, label=mass_text)
+
+    # Get existing handles/labels (Data points + Fit line)
+    handles, labels = avg_Df_ax.get_legend_handles_labels()
+
+    # Append our blank handle and re-draw the legend
+    avg_Df_ax.legend(handles=handles + [blank_handle], loc='best')
+
     avg_Df_fig.tight_layout()
-    plt.legend().get_texts()[1].set_text("Sauerbrey mass: " + f"{m*C:.1f}" + r" ($\frac{ng}{cm^2}$)")
+    # plt.legend().get_texts()[1].set_text("Sauerbrey mass: " + f"{m*C:.1f}" + r" ($\frac{ng}{cm^2}$)")
     plt.savefig(f"qcmd-plots/modeling/Sauerbrey_fit_range_{label}.{fig_format}", format=fig_format, bbox_inches='tight', transparent=True, dpi=dpi)
 
     return mu_Df, delta_mu_Df, mu_Df_fit
