@@ -1,5 +1,4 @@
 .bratadio_venv
-.devcontainer
 .vscode
 
 qcmd-plots/*.png

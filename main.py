@@ -613,6 +613,9 @@ class numSensorsFrame(tk.Frame):
         # if qsense and 1 sensor, nothing changes
         
         pass
+class interactiveTimeInputFrame(tk.Frame):
+    global input
+    pass
 
 class absTimeInputFrame(tk.Frame):
     """Frame for input of absolute baseline time"""    
