@@ -684,6 +684,7 @@ class relTimeInputFrame(tk.Frame):
         baseline_time_label.grid(row=0, column=0, columnspan=2)
 
         # interactive baseline selection button
+        self.baseline_window=None
         self.interactive_baseline_selection_button = tk.Button(self, text="Select Baseline Interactively", padx=8, pady=6, width=20, command=self.get_baseline_interactively)
         self.interactive_baseline_selection_button.grid(row=1, pady=(16,4), padx=20, columnspan=2)
 
@@ -731,7 +732,52 @@ class relTimeInputFrame(tk.Frame):
         """prompts user to select baseline interactively on plot
         updates the entry fields for relative time to the values selected by the user
         """        
-        pass
+        if self.baseline_window is not None and self.baseline_window.winfo_exists():
+            self.baseline_window.lift()
+            self.baseline_window.focus_force()
+            return
+
+        parent_win = self.winfo_toplevel()  # the main app window
+
+        w = tk.Toplevel(parent_win)
+        self.baseline_window = w
+        w.title("Interactively Select Baseline Range")
+        w.geometry("400x200")
+        w.transient(parent_win)   # keep it associated with the main window
+        w.grab_set()              # modal: block interaction with main window
+        w.resizable(False, False)
+        w.focus_force()
+
+        popup_body = tk.Frame(w, padx=16, pady=16)
+        popup_body.pack(fill='both', expand=True)
+
+        instructions = tk.Label(popup_body, text="Select baseline range on plot")
+        instructions.grid(row=0, column=0, columnspan=2, pady=(0, 12))
+        
+        def apply_selection():
+            # Example selected values
+            t0, tf = "120", "260"
+            self.set_rel_time(t0, tf)  # updates spinboxes in main window
+            close_popup()
+
+        def close_popup():
+            if w.winfo_exists():
+                w.grab_release()
+                w.destroy()
+            self.baseline_window = None
+
+        apply_button = tk.Button(popup_body, text="Apply", command=apply_selection)
+        apply_button.grid(row=2, column=0, padx=(0, 8), sticky='ew')
+        cancel_button = tk.Button(popup_body, text="Cancel", command=close_popup)
+        cancel_button.grid(row=2, column=1, padx=(8, 0), sticky='ew')
+
+        popup_body.grid_columnconfigure(0, weight=1)
+        popup_body.grid_columnconfigure(1, weight=1)
+
+        w.protocol("WM_DELETE_WINDOW", close_popup)
+
+        # block this callback until popup closes
+        w.wait_window()
 
     def clear(self):
         self.t0_entry.delete(0, tk.END)
