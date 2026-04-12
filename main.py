@@ -683,17 +683,21 @@ class relTimeInputFrame(tk.Frame):
         baseline_time_label = tk.Label(self, text="Enter relative baseline time")
         baseline_time_label.grid(row=0, column=0, columnspan=2)
 
+        # interactive baseline selection button
+        self.interactive_baseline_selection_button = tk.Button(self, text="Select Baseline Interactively", padx=8, pady=6, width=20, command=self.get_baseline_interactively)
+        self.interactive_baseline_selection_button.grid(row=1, pady=(16,4), padx=20, columnspan=2)
+
         # validation cmd
         self.vcmd_int = (self.register(validate_integer), '%P')
 
         self.t0_label = tk.Label(self, text="t0 (s): ")
-        self.t0_label.grid(row=1, column=0)
+        self.t0_label.grid(row=2, column=0)
         self.t0_entry = tk.Spinbox(self, width=5, from_=0, to=np.inf, increment=10, validate='focus', validatecommand=self.vcmd_int)
-        self.t0_entry.grid(row=1, column=1)
+        self.t0_entry.grid(row=2, column=1)
         self.tf_label = tk.Label(self, text="tf (s): ")
-        self.tf_label.grid(row=2, column=0)
+        self.tf_label.grid(row=3, column=0)
         self.tf_entry = tk.Spinbox(self, width=5, from_=0, to=np.inf, increment=10, validate='focus', validatecommand=self.vcmd_int)
-        self.tf_entry.grid(row=2, column=1)
+        self.tf_entry.grid(row=3, column=1)
 
     def get_rel_time(self):
         """retrieves the times from the Tk entry fields
@@ -710,6 +714,24 @@ class relTimeInputFrame(tk.Frame):
             print(msg)
             Exceptions.error_popup(msg)
         return t0, tf
+    
+    def set_rel_time(self, t0, tf):        
+        """sets the entry fields for relative time to new values
+
+        Args:
+            t0 (str): time=0 for baseline time 
+            tf (str): time=final for baseline time 
+        """
+        self.t0_entry.delete(0, tk.END)
+        self.t0_entry.insert(0, t0)
+        self.tf_entry.delete(0, tk.END)
+        self.tf_entry.insert(0, tf)
+
+    def get_baseline_interactively(self):
+        """prompts user to select baseline interactively on plot
+        updates the entry fields for relative time to the values selected by the user
+        """        
+        pass
 
     def clear(self):
         self.t0_entry.delete(0, tk.END)
