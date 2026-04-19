@@ -688,7 +688,9 @@ class relTimeInputFrame(tk.Frame):
         baseline_time_label.grid(row=0, column=0, columnspan=2)
 
         # interactive baseline selection button
-        self.baseline_window=None
+        self.baseline_window = None
+        self.baseline_original_t0 = ''
+        self.baseline_original_tf = ''
         self.interactive_baseline_selection_button = tk.Button(self, text="Select Baseline Interactively", padx=8, pady=6, width=20, command=self.get_baseline_interactively)
         self.interactive_baseline_selection_button.grid(row=1, pady=(16,4), padx=20, columnspan=2)
 
@@ -732,6 +734,25 @@ class relTimeInputFrame(tk.Frame):
         self.tf_entry.delete(0, tk.END)
         self.tf_entry.insert(0, tf)
 
+    def close_baseline_popup(self, restore_original=False):
+        """close the interactive baseline popup and optionally restore pre-open values"""
+        if restore_original:
+            self.set_rel_time(self.baseline_original_t0, self.baseline_original_tf)
+
+        if self.baseline_window is not None and self.baseline_window.winfo_exists():
+            try:
+                self.baseline_window.grab_release()
+            except tk.TclError:
+                pass
+            try:
+                self.baseline_window.destroy()
+            except tk.TclError:
+                pass
+
+        self.baseline_window = None
+        self.baseline_original_t0 = ''
+        self.baseline_original_tf = ''
+
     def get_baseline_interactively(self):
         """prompts user to select baseline interactively on plot
         updates the entry fields for relative time to the values selected by the user
@@ -741,8 +762,26 @@ class relTimeInputFrame(tk.Frame):
             self.baseline_window.focus_force()
             return
 
+        if input.file == '':
+            msg = "WARNING: No data file was selected"
+            print(msg)
+            Exceptions.warning_popup(msg)
+            return
+
         original_t0 = self.t0_entry.get()
         original_tf = self.tf_entry.get()
+        self.baseline_original_t0 = original_t0
+        self.baseline_original_tf = original_tf
+
+        # Build preview data from formatted experiment data before opening popup.
+        signal_label = 'Frequency'
+        try:
+            time_data, frequency_data, signal_label = get_interactive_baseline_preview_data(input)
+        except Exception as exc:
+            msg = f"Could not build interactive baseline preview data.\n{exc}"
+            print(msg)
+            Exceptions.warning_popup(msg)
+            return
 
         parent_win = self.winfo_toplevel()  # the main app window
 
@@ -776,18 +815,7 @@ class relTimeInputFrame(tk.Frame):
         plot_frame.grid_rowconfigure(0, weight=1)
         plot_frame.grid_columnconfigure(0, weight=1)
         
-        # Build preview data from formatted experiment data before full submit.
-        signal_label = 'Frequency'
-        try:
-            time_data, frequency_data, signal_label = get_interactive_baseline_preview_data(input)
-        except Exception as exc:
-            msg = f"Could not build preview data from file, using debug data instead.\n{exc}"
-            print(msg)
-            Exceptions.warning_popup(msg)
-            time_data = np.linspace(0, 600, 300)  # 0-600 seconds
-            frequency_data = 5000 + 50 * np.sin(0.02 * time_data) + np.random.normal(0, 10, len(time_data))
-        
-        # Create figure with debug data
+        # Create figure with preview data
         fig = Figure(figsize=(8, 4), dpi=100)
         ax = fig.add_subplot(111)
         ax.plot(time_data, frequency_data, label=signal_label, color='blue')
@@ -819,31 +847,25 @@ class relTimeInputFrame(tk.Frame):
             height=4
         )
         
-        def close_popup(restore_original=False):
-            if restore_original:
-                self.set_rel_time(original_t0, original_tf)
-            if w.winfo_exists():
-                w.grab_release()
-                w.destroy()
-            self.baseline_window = None
-
         # Buttons frame
         buttons_frame = tk.Frame(popup_body)
         buttons_frame.grid(row=2, column=0, sticky='ew', pady=(8, 0))
         buttons_frame.grid_columnconfigure(0, weight=1)
         buttons_frame.grid_columnconfigure(1, weight=1)
         
-        apply_button = tk.Button(buttons_frame, text="Apply", command=lambda: close_popup(False))
+        apply_button = tk.Button(buttons_frame, text="Apply", command=lambda: self.close_baseline_popup(False))
         apply_button.grid(row=0, column=0, sticky='ew', padx=(0, 8))
-        cancel_button = tk.Button(buttons_frame, text="Cancel", command=lambda: close_popup(True))
+        cancel_button = tk.Button(buttons_frame, text="Cancel", command=lambda: self.close_baseline_popup(True))
         cancel_button.grid(row=0, column=1, sticky='ew', padx=(8, 0))
 
-        w.protocol("WM_DELETE_WINDOW", lambda: close_popup(True))
+        w.protocol("WM_DELETE_WINDOW", lambda: self.close_baseline_popup(True))
+        w.bind("<Escape>", lambda event: self.close_baseline_popup(True))
 
         # block this callback until popup closes
         w.wait_window()
 
     def clear(self):
+        self.close_baseline_popup(False)
         self.t0_entry.delete(0, tk.END)
         self.tf_entry.delete(0, tk.END)
 

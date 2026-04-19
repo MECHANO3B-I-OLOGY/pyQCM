@@ -1,10 +1,10 @@
 import numpy as np
 import time
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 
 
-def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=0, initial_tf=1, width=6, height=4, dpi=100, motion_interval_ms=16, selection_min_x=None, selection_max_x=None):
+def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=0, initial_tf=1, width=6, height=4, dpi=100, motion_interval_ms=16, selection_min_x=None, selection_max_x=None, show_toolbar=True):
     """Create and display an interactive matplotlib plot for selecting baseline range.
 
     Args:
@@ -24,6 +24,8 @@ def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=
             Defaults to minimum plotted data x value.
         selection_max_x (float, optional): upper x bound allowed for baseline handles.
             Defaults to maximum plotted data x value.
+        show_toolbar (bool, optional): if True, show Matplotlib navigation toolbar
+            for zoom and pan controls.
 
     Returns:
         tuple: (fig, ax, canvas, selected_range_dict)
@@ -147,10 +149,14 @@ def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=
     def on_plot_press(event):
         if event.inaxes != ax or event.xdata is None:
             return
+        if toolbar is not None and toolbar.mode != '':
+            return
         selected_range["active"] = nearest_handle(event)
         selected_range["last_motion_time"] = 0.0
 
     def on_plot_motion(event):
+        if toolbar is not None and toolbar.mode != '':
+            return
         if selected_range["active"] is None or event.inaxes != ax or event.xdata is None:
             return
 
@@ -176,6 +182,9 @@ def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=
         redraw_selection(trigger_callback=False)
 
     def on_plot_release(event):
+        if toolbar is not None and toolbar.mode != '':
+            selected_range["active"] = None
+            return
         if selected_range["active"] is not None:
             redraw_selection(trigger_callback=True)
         selected_range["active"] = None
@@ -184,6 +193,12 @@ def display_interactive_plot(parent, figure=None, on_selection=None, initial_t0=
     canvas = FigureCanvasTkAgg(fig, master=parent)
     canvas_widget = canvas.get_tk_widget()
     canvas_widget.grid(row=0, column=0, sticky="nsew")
+
+    toolbar = None
+    if show_toolbar:
+        toolbar = NavigationToolbar2Tk(canvas, parent, pack_toolbar=False)
+        toolbar.update()
+        toolbar.grid(row=1, column=0, sticky="ew")
 
     apply_plot_margins()
     x_span = max(max_select_x - min_select_x, 1.0)
