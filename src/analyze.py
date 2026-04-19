@@ -80,6 +80,67 @@ def get_channels(channels):
     return (freq_list, disp_list)
 
 
+def get_interactive_baseline_preview_data(input_obj):
+    """Build an in-memory preview series for baseline selection before submit.
+
+    This function reads the formatted file (or formats the source file if needed),
+    selects a representative frequency channel, and returns numeric arrays for
+    plotting in the baseline popup.
+
+    Args:
+        input_obj: UI input object from main.py
+
+    Returns:
+        tuple: (time_values, signal_values, signal_label)
+    """
+    if input_obj.file == '':
+        raise ValueError("No data file selected.")
+
+    analysis = Analysis(input_obj.file)
+
+    if input_obj.file_src_type == '':
+        raise ValueError("Select a file source type before interactive baseline preview.")
+
+    from src.format_file import build_formatted_df
+    df = build_formatted_df(input_obj.file_src_type, input_obj.file, input_obj.will_use_theoretical_vals)
+    if analysis.time_col not in df.columns:
+        raise ValueError(f"Formatted data does not contain '{analysis.time_col}' column.")
+
+    # Prefer user-selected clean channels, then raw channels, then defaults.
+    clean_freqs, _ = get_channels(input_obj.which_plot['clean'].items())
+    raw_freqs, _ = get_channels(input_obj.which_plot['raw'].items())
+    candidate_freqs = []
+    candidate_freqs.extend(clean_freqs)
+    candidate_freqs.extend(raw_freqs)
+    candidate_freqs.extend(analysis.freqs)
+
+    chosen_col = None
+    for col in candidate_freqs:
+        if col in df.columns:
+            chosen_col = col
+            break
+
+    if chosen_col is None:
+        for col in df.columns:
+            if '_freq' in col:
+                chosen_col = col
+                break
+
+    if chosen_col is None:
+        raise ValueError("No frequency column found for interactive baseline preview.")
+
+    preview_df = pd.DataFrame({
+        analysis.time_col: pd.to_numeric(df[analysis.time_col], errors='coerce'),
+        chosen_col: pd.to_numeric(df[chosen_col], errors='coerce'),
+    }).dropna()
+
+    if preview_df.empty:
+        raise ValueError("No valid preview datapoints found after filtering invalid values.")
+
+    preview_df = preview_df.sort_values(by=analysis.time_col).reset_index(drop=True)
+    return preview_df[analysis.time_col].to_numpy(), preview_df[chosen_col].to_numpy(), chosen_col
+
+
 def get_num_from_string(string):
     '''returns integer given string with a number in it
     use case ex. "3rd_freq -> 3"'''

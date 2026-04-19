@@ -262,6 +262,45 @@ def format_AWSensors(df, calibration_df):
     return fmt_df
 
 
+def build_formatted_df(src_type, data_file, will_use_theoretical_vals):
+    """format a data file into BraTaDio's dataframe shape without writing it to disk."""
+    file_name, ext = os.path.splitext(data_file)
+    file_name = os.path.basename(file_name)
+
+    # check if file has already been formatted previously
+    if data_file.__contains__("Formatted"):
+        print(f"{file_name} has been formatted previously, using previously formatted file...")
+        return open_df_from_file(data_file)
+
+    data_df = open_df_from_file(data_file)
+
+    # check if column headers match BraTaDio fmt
+    is_preformatted = check_file_previously_formatted(data_df, ext)
+    if is_preformatted:
+        formatted_df = data_df
+    else:
+        print(f"*** Before formatting\n{data_df}")
+        if src_type == 'QCM-d':
+            formatted_df = format_QCM_next(data_df)
+        elif src_type == 'QCM-i':
+            formatted_df = format_QCMi(data_df)
+        elif src_type == 'Qsense' and ext == '.qsd':
+            calibration_df = open_df_from_file("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+            formatted_df = data_df
+        elif src_type == 'Qsense' or src_type == 'AWSensors':
+            if not will_use_theoretical_vals:
+                calibration_df = open_df_from_file("offset_data/COPY-PASTE_OFFSET_VALUES_HERE.csv")
+            else:
+                calibration_df = pd.DataFrame()
+            formatted_df = format_Qsense(data_df, calibration_df) if src_type == 'Qsense' else format_AWSensors(data_df, calibration_df)
+        else:
+            print("invalid option selected")
+
+    print(file_name)
+    print(f"*** After formatting\n{formatted_df}")
+    return formatted_df
+
+
 def check_file_previously_formatted(df, ext):
     """checks column headers to see if it has been previously formatted by software
     warns user if True

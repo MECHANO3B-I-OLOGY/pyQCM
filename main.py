@@ -19,7 +19,7 @@ import subprocess
 import platform
 
 import src.Exceptions as Exceptions
-from src.analyze import analyze_data, ordinal
+from src.analyze import analyze_data, ordinal, get_interactive_baseline_preview_data
 from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
 from src.interactive_baseline_graph import display_interactive_plot
@@ -776,16 +776,23 @@ class relTimeInputFrame(tk.Frame):
         plot_frame.grid_rowconfigure(0, weight=1)
         plot_frame.grid_columnconfigure(0, weight=1)
         
-        # Create debug data for the plot
-        time_data = np.linspace(0, 600, 300)  # 0-600 seconds
-        frequency_data = 5000 + 50 * np.sin(0.02 * time_data) + np.random.normal(0, 10, len(time_data))
+        # Build preview data from formatted experiment data before full submit.
+        signal_label = 'Frequency'
+        try:
+            time_data, frequency_data, signal_label = get_interactive_baseline_preview_data(input)
+        except Exception as exc:
+            msg = f"Could not build preview data from file, using debug data instead.\n{exc}"
+            print(msg)
+            Exceptions.warning_popup(msg)
+            time_data = np.linspace(0, 600, 300)  # 0-600 seconds
+            frequency_data = 5000 + 50 * np.sin(0.02 * time_data) + np.random.normal(0, 10, len(time_data))
         
         # Create figure with debug data
         fig = Figure(figsize=(8, 4), dpi=100)
         ax = fig.add_subplot(111)
-        ax.plot(time_data, frequency_data, label='Frequency', color='blue')
+        ax.plot(time_data, frequency_data, label=signal_label, color='blue')
         ax.set_xlabel('Time (s)')
-        ax.set_ylabel('Frequency (Hz)')
+        ax.set_ylabel(signal_label)
         ax.set_title('Select Baseline Range')
         ax.legend()
 
@@ -797,7 +804,7 @@ class relTimeInputFrame(tk.Frame):
         
         # Callback when baseline is selected
         def on_baseline_selected(t0, tf):
-            self.set_rel_time(str(int(t0)), str(int(tf)))
+            self.set_rel_time(str(int(round(t0))), str(int(round(tf))))
         
         # Display the interactive plot
         fig, ax, canvas, selected_range = display_interactive_plot(
@@ -806,6 +813,8 @@ class relTimeInputFrame(tk.Frame):
             on_selection=on_baseline_selected,
             initial_t0=to_float(original_t0, 0),
             initial_tf=to_float(original_tf, 1),
+            selection_min_x=0.0,
+            selection_max_x=float(np.max(time_data)) if len(time_data) > 0 else 1.0,
             width=8,
             height=4
         )
