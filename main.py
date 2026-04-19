@@ -22,6 +22,10 @@ import src.Exceptions as Exceptions
 from src.analyze import analyze_data, ordinal
 from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
+from src.interactive_baseline_graph import display_interactive_plot
+
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 '''Variable Initializations'''
 class Input:
@@ -737,44 +741,95 @@ class relTimeInputFrame(tk.Frame):
             self.baseline_window.focus_force()
             return
 
+        original_t0 = self.t0_entry.get()
+        original_tf = self.tf_entry.get()
+
         parent_win = self.winfo_toplevel()  # the main app window
 
         w = tk.Toplevel(parent_win)
         self.baseline_window = w
         w.title("Interactively Select Baseline Range")
-        w.geometry("400x200")
+        w.geometry("800x500")
         w.transient(parent_win)   # keep it associated with the main window
         w.grab_set()              # modal: block interaction with main window
-        w.resizable(False, False)
+        w.resizable(True, True)
+        w.minsize(720, 450)
         w.focus_force()
 
         popup_body = tk.Frame(w, padx=16, pady=16)
-        popup_body.pack(fill='both', expand=True)
+        popup_body.grid(row=0, column=0, sticky='nsew')
+        w.grid_rowconfigure(0, weight=1)
+        w.grid_columnconfigure(0, weight=1)
+        popup_body.grid_rowconfigure(1, weight=1)
+        popup_body.grid_columnconfigure(0, weight=1)
 
-        instructions = tk.Label(popup_body, text="Select baseline range on plot")
-        instructions.grid(row=0, column=0, columnspan=2, pady=(0, 12))
+        instructions = tk.Label(
+            popup_body,
+            text="Drag the green/red bars to adjust baseline range",
+            font=('TkDefaultFont', 12, 'bold'),
+        )
+        instructions.grid(row=0, column=0, sticky='w', pady=(0, 12))
         
-        def apply_selection():
-            # Example selected values
-            t0, tf = "120", "260"
-            self.set_rel_time(t0, tf)  # updates spinboxes in main window
-            close_popup()
+        # Frame for the plot
+        plot_frame = tk.Frame(popup_body)
+        plot_frame.grid(row=1, column=0, sticky='nsew', pady=(0, 12))
+        plot_frame.grid_rowconfigure(0, weight=1)
+        plot_frame.grid_columnconfigure(0, weight=1)
+        
+        # Create debug data for the plot
+        time_data = np.linspace(0, 600, 300)  # 0-600 seconds
+        frequency_data = 5000 + 50 * np.sin(0.02 * time_data) + np.random.normal(0, 10, len(time_data))
+        
+        # Create figure with debug data
+        fig = Figure(figsize=(8, 4), dpi=100)
+        ax = fig.add_subplot(111)
+        ax.plot(time_data, frequency_data, label='Frequency', color='blue')
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Frequency (Hz)')
+        ax.set_title('Select Baseline Range')
+        ax.legend()
 
-        def close_popup():
+        def to_float(value, fallback):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return float(fallback)
+        
+        # Callback when baseline is selected
+        def on_baseline_selected(t0, tf):
+            self.set_rel_time(str(int(t0)), str(int(tf)))
+        
+        # Display the interactive plot
+        fig, ax, canvas, selected_range = display_interactive_plot(
+            plot_frame, 
+            figure=fig,
+            on_selection=on_baseline_selected,
+            initial_t0=to_float(original_t0, 0),
+            initial_tf=to_float(original_tf, 1),
+            width=8,
+            height=4
+        )
+        
+        def close_popup(restore_original=False):
+            if restore_original:
+                self.set_rel_time(original_t0, original_tf)
             if w.winfo_exists():
                 w.grab_release()
                 w.destroy()
             self.baseline_window = None
 
-        apply_button = tk.Button(popup_body, text="Apply", command=apply_selection)
-        apply_button.grid(row=2, column=0, padx=(0, 8), sticky='ew')
-        cancel_button = tk.Button(popup_body, text="Cancel", command=close_popup)
-        cancel_button.grid(row=2, column=1, padx=(8, 0), sticky='ew')
+        # Buttons frame
+        buttons_frame = tk.Frame(popup_body)
+        buttons_frame.grid(row=2, column=0, sticky='ew', pady=(8, 0))
+        buttons_frame.grid_columnconfigure(0, weight=1)
+        buttons_frame.grid_columnconfigure(1, weight=1)
+        
+        apply_button = tk.Button(buttons_frame, text="Apply", command=lambda: close_popup(False))
+        apply_button.grid(row=0, column=0, sticky='ew', padx=(0, 8))
+        cancel_button = tk.Button(buttons_frame, text="Cancel", command=lambda: close_popup(True))
+        cancel_button.grid(row=0, column=1, sticky='ew', padx=(8, 0))
 
-        popup_body.grid_columnconfigure(0, weight=1)
-        popup_body.grid_columnconfigure(1, weight=1)
-
-        w.protocol("WM_DELETE_WINDOW", close_popup)
+        w.protocol("WM_DELETE_WINDOW", lambda: close_popup(True))
 
         # block this callback until popup closes
         w.wait_window()
