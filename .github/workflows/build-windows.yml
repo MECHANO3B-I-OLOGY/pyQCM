@@ -36,7 +36,9 @@ jobs:
             $src = $_
             # Skip generated runtime outputs to avoid shipping stale state.
             if (
+              $src -like "selected_ranges/*.csv" -or
               $src -like "raw_data/Formatted-*.csv" -or
+              $src -like "sample_generations/*/*.csv" -or
               $src -like "qcmd-plots/*" -or
               $src -like "qcmd-plots/**/*"
             ) {
@@ -52,10 +54,21 @@ jobs:
             }
           }
 
-          # Ensure runtime output folders exist in packaged app.
           New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "selected_ranges") | Out-Null
           New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "qcmd-plots") | Out-Null
           New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "qcmd-plots/modeling") | Out-Null
+
+          # Seed required stats files with headers to keep runtime state clean and readable on first run.
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/clean_all_stats_rf.csv") -Value "overtone,Dfreq_average,Dfreq_std_dev,Dfreq_median,range_name,x_lower,x_upper,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/clean_all_stats_dis.csv") -Value "overtone,Ddis_average,Ddis_std_dev,Ddis_median,range_name,x_lower,x_upper,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/raw_all_stats_rf.csv") -Value "overtone,Dfreq_average,Dfreq_std_dev,Dfreq_median,range_name,x_lower,x_upper,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/raw_all_stats_dis.csv") -Value "overtone,Ddis_average,Ddis_std_dev,Ddis_median,range_name,x_lower,x_upper,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/Sauerbrey_stats.csv") -Value "overtone,avg_Df,std_dev_Df,avg_Dm,std_dev_Dm,C,range_name,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/Sauerbrey_ranges.csv") -Value "range_name,lower_bound,upper_bound,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/sauerbrey_output.csv") -Value "avg_Df,avg_Dm,range_name,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/thin_film_liquid_output.csv") -Value "n*Df,bandwidth_shift,bandwidth_shift_FIT,range_name,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/thin_film_air_output.csv") -Value "sq_overtones,delta_gamma_norm,delta_gamma_norm_fit,delta_freqs_norm,delta_freq_norm_fit,range_name,data_source"
+          Set-Content -Path (Join-Path $stagingDir "selected_ranges/crystal_thickness_output.csv") -Value "overtone,offset_vals,offset_vals_FIT"
 
           Copy-Item -Path dist/pyQCMWindows.exe -Destination (Join-Path $stagingDir "pyQCMWindows.exe") -Force
 
