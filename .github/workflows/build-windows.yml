@@ -34,6 +34,15 @@ jobs:
 
           git ls-files --cached --others --exclude-standard | ForEach-Object {
             $src = $_
+            # Skip generated runtime outputs to avoid shipping stale state.
+            if (
+              $src -like "selected_ranges/*.csv" -or
+              $src -like "raw_data/Formatted-*.csv" -or
+              $src -like "qcmd-plots/*" -or
+              $src -like "qcmd-plots/**/*"
+            ) {
+              return
+            }
             if (Test-Path $src -PathType Leaf) {
               $dest = Join-Path $stagingDir $src
               $destDir = Split-Path $dest -Parent
@@ -43,6 +52,11 @@ jobs:
               Copy-Item -Path $src -Destination $dest -Force
             }
           }
+
+          # Ensure runtime output folders exist in packaged app.
+          New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "selected_ranges") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "qcmd-plots") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "qcmd-plots/modeling") | Out-Null
 
           Copy-Item -Path dist/pyQCMWindows.exe -Destination (Join-Path $stagingDir "pyQCMWindows.exe") -Force
 
