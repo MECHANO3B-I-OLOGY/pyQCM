@@ -50,4 +50,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pyQCM-Windows-Package
-          path: package/*
+          path: package/**
+          include-hidden-files: true
