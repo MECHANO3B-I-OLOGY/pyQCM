@@ -36,7 +36,6 @@ jobs:
             $src = $_
             # Skip generated runtime outputs to avoid shipping stale state.
             if (
-              $src -like "selected_ranges/*.csv" -or
               $src -like "raw_data/Formatted-*.csv" -or
               $src -like "qcmd-plots/*" -or
               $src -like "qcmd-plots/**/*"
