@@ -47,6 +47,7 @@ class Input:
         self.will_normalize_F = False # indicates if user selected to normalize frequency data
         self.will_plot_dD_v_dF = False # indicates if user selected to plot change in dis vs change in freq
         self.interactive_plot_data_fmt = {'raw': False, 'clean': False} # indicates which data user wants to interactive plot
+        self.will_plot_derivatives = False
         self.submit_pressed = False # submitting gui data the first time has different implications than if resubmitting
         self.enable_interactive_plot = False
         self.which_range_selecting = {'raw': '', 'clean': ''} # which range of the interactive plot is about to be selected
@@ -1733,9 +1734,17 @@ class Col4(tk.Frame):
         self.correct_slope_var = tk.IntVar()
         self.correct_slope_check = tk.Checkbutton(self, text="Drift correction", variable=self.correct_slope_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
         #self.correct_slope_check.grid(row=6, column=4)
+        self.derivatives_var = tk.IntVar()
+        self.derivatives_check = tk.Checkbutton(self, text="Plot derivatives", variable=self.derivatives_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
+        self.derivatives_check.grid(row=7, column=4, pady=(6,0))
+
+        self.derivatives_frame = tk.Frame(self)
+        self.derivatives_button = tk.Button(self.derivatives_frame, text="Derivatives Button", padx=8, pady=6, width=20, command=self.derivatives_button_action)
+        self.derivatives_button.pack(pady=10)
+
         self.enable_interactive_plot_var = tk.IntVar()
         self.enable_interactive_plot_check = tk.Checkbutton(self, text="Enable interactive plot", variable=self.enable_interactive_plot_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
-        self.enable_interactive_plot_check.grid(row=7, column=4, pady=(6,0))
+        self.enable_interactive_plot_check.grid(row=9, column=4, pady=(6,0))
 
         self.open_model_window_button = tk.Button(self, text="Modelling", padx=8, pady=6, width=20, command=self.model_window_button)
         self.open_model_window_button.grid(row=22, column=4, pady=4)
@@ -1758,9 +1767,15 @@ class Col4(tk.Frame):
         input.will_plot_temp_v_time = True if self.plot_temp_v_time_var.get() == 1 else False
         input.will_correct_slope = True if self.correct_slope_var.get() == 1 else False
         input.enable_interactive_plot = True if self.enable_interactive_plot_var.get() == 1 else False
+        input.will_plot_derivatives = True if self.derivatives_var.get() == 1 else False
+
+        if self.derivatives_var.get() == 1:
+            self.derivatives_frame.grid(row=8, column=4, pady=(6,0))
+        else:
+            self.derivatives_frame.grid_forget()
 
         if self.enable_interactive_plot_var.get() == 1:
-            self.int_plot_frame.grid(row=8, column=4)
+            self.int_plot_frame.grid(row=10, column=4)
         else:
             self.int_plot_frame.grid_forget()
 
@@ -1786,6 +1801,10 @@ class Col4(tk.Frame):
             Exceptions.error_popup(msg)
         
         print(f"confirmed range: {input.which_range_selecting}")
+
+    def derivatives_button_action(self):
+        print("Derivatives button clicked!")
+        Exceptions.warning_popup("Derivatives button was clicked!")
 
     def model_window_button(self):
         try:
