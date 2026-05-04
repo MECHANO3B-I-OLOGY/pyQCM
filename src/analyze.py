@@ -23,6 +23,7 @@ import sys
 import json
 
 import src.Exceptions as Exceptions
+from src.derivatives import calculate_derivative
 
 ''' ANALYSIS VARIABLES '''
 class Analysis:
@@ -871,6 +872,12 @@ def analyze_data(input):
             disVfreq_fig = plt.figure()
             disVfreq_ax = disVfreq_fig.add_subplot(111)
 
+        if input.will_plot_derivatives:
+            deriv_freq_fig = plt.figure()
+            deriv_freq_ax = deriv_freq_fig.add_subplot(111)
+            deriv_dis_fig = plt.figure()
+            deriv_dis_ax = deriv_dis_fig.add_subplot(111)
+
         if input.will_plot_dF_dD_together:
             mult_fig, mult_ax1 = plt.subplots()
             mult_ax2 = mult_ax1.twinx()
@@ -986,7 +993,17 @@ def analyze_data(input):
                     unnormalized_df = data_df.copy()
                 unnormalized_df[clean_freqs[i]] *= overtone
 
-            # PLOTTING
+            if input.will_plot_derivatives:
+                try:
+                    freq_deriv = calculate_derivative(y_freq.values, x_time_freq.values)
+                    dis_deriv = calculate_derivative(y_dis.values, x_time_dis.values)
+                    print(f"derivatives.calculate_derivative returned for {clean_freqs[i]} (len={len(freq_deriv)}), {clean_disps[i]} (len={len(dis_deriv)})")
+                    if getattr(freq_deriv, 'size', 0) > 0:
+                        deriv_freq_ax.plot(x_time_freq[::points_idx], freq_deriv[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_freqs[i]))} d(Δf)/dt", color=freq_color_map[clean_freqs[i]])
+                    if getattr(dis_deriv, 'size', 0) > 0:
+                        deriv_dis_ax.plot(x_time_dis[::points_idx], dis_deriv[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_disps[i]))} d(ΔD)/dt", color=dis_color_map[clean_disps[i]])
+                except Exception as e:
+                    print(f"Derivative compute/plot failed: {e}")
             if i < freq_plot_cap:
                 freq_ax.plot(x_time_freq[::points_idx], y_freq[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(clean_freqs[i])), color=freq_color_map[clean_freqs[i]])
         
@@ -1045,6 +1062,17 @@ def analyze_data(input):
         
         freq_fig.savefig(f"qcmd-plots/frequency_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
         dis_fig.savefig(f"qcmd-plots/dissipation_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+        if input.will_plot_derivatives:
+            try:
+                deriv_freq_fn = f"qcmd-plots/derivative_deltaf_plot"
+                setup_plot(deriv_freq_fig, deriv_freq_ax, fig_x, r"d(Δf)/dt", "Derivative of Δf vs Time", deriv_freq_fn)
+                deriv_freq_fig.savefig(f"qcmd-plots/derivative_deltaf_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
+                deriv_dis_fn = f"qcmd-plots/derivative_deltad_plot"
+                setup_plot(deriv_dis_fig, deriv_dis_ax, fig_x, r"d(ΔD)/dt", "Derivative of ΔD vs Time", deriv_dis_fn)
+                deriv_dis_fig.savefig(f"qcmd-plots/derivative_deltad_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+            except Exception as e:
+                print(f"Failed to save derivative figures: {e}")
         
         if input.will_plot_dD_v_dF:
             dVf_fn = f"qcmd-plots/disp_V_freq-plot"
@@ -1073,12 +1101,25 @@ def analyze_data(input):
         raw_freqs, raw_disps = get_channels(input.which_plot['raw'].items())
         raw_freq_fig = plt.figure()
         raw_freq_ax = raw_freq_fig.add_subplot(111)
+        if input.will_plot_derivatives:
+            raw_deriv_freq_fig = plt.figure()
+            raw_deriv_freq_ax = raw_deriv_freq_fig.add_subplot(111)
+            raw_deriv_dis_fig = plt.figure()
+            raw_deriv_dis_ax = raw_deriv_dis_fig.add_subplot(111)
         # gather and plot raw frequency data
         for i in range(len(raw_freqs)):
             freq_df = df[[analysis.time_col,raw_freqs[i]]]
             x_time = freq_df[analysis.time_col]
             y_freq = freq_df[raw_freqs[i]]
-        
+            if input.will_plot_derivatives:
+                try:
+                    freq_deriv = calculate_derivative(y_freq.values, x_time.values)
+                    print(f"derivatives.calculate_derivative returned for raw {raw_freqs[i]} (len={len(freq_deriv)})")
+                    if getattr(freq_deriv, 'size', 0) > 0:
+                        raw_deriv_freq_ax.plot(x_time[::points_idx], freq_deriv[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_freqs[i])) + ' d(f)/dt', color=freq_color_map[raw_freqs[i]])
+                except Exception as e:
+                    print(f"Raw derivative failed: {e}")
+
             raw_freq_ax.plot(x_time[::points_idx], y_freq[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_freqs[i])), color=freq_color_map[raw_freqs[i]])
             
         # gather and plot raw dissipation data
@@ -1088,12 +1129,32 @@ def analyze_data(input):
             dis_df = df[[analysis.time_col,raw_disps[i]]]
             x_time = dis_df[analysis.time_col]
             y_dis = dis_df[raw_disps[i]]
+            if input.will_plot_derivatives:
+                try:
+                    dis_deriv = calculate_derivative(y_dis.values, x_time.values)
+                    print(f"derivatives.calculate_derivative returned for raw {raw_disps[i]} (len={len(dis_deriv)})")
+                    if getattr(dis_deriv, 'size', 0) > 0:
+                        raw_deriv_dis_ax.plot(x_time[::points_idx], dis_deriv[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_disps[i])) + ' d(D)/dt', color=dis_color_map[raw_disps[i]])
+                except Exception as e:
+                    print(f"Raw derivative failed: {e}")
+
             raw_dis_ax.plot(x_time[::points_idx], y_dis[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_disps[i])), color=dis_color_map[raw_disps[i]])
             
         # save raw frequency plots
         rf_fn = f"qcmd-plots/RAW-resonant-freq-plot"
         setup_plot(raw_freq_fig, raw_freq_ax, fig_x, determine_ylabel('freq', False, True), rf_fig_title, rf_fn, plot_customs['fig_format'])
         raw_freq_fig.savefig(rf_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+        if input.will_plot_derivatives:
+            try:
+                raw_deriv_freq_fn = f"qcmd-plots/RAW-derivative_deltaf_plot"
+                setup_plot(raw_deriv_freq_fig, raw_deriv_freq_ax, fig_x, r"d(f)/dt", "Raw Derivative of f vs Time", raw_deriv_freq_fn)
+                raw_deriv_freq_fig.savefig(raw_deriv_freq_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
+                raw_deriv_dis_fn = f"qcmd-plots/RAW-derivative_d_plot"
+                setup_plot(raw_deriv_dis_fig, raw_deriv_dis_ax, fig_x, r"d(D)/dt", "Raw Derivative of D vs Time", raw_deriv_dis_fn)
+                raw_deriv_dis_fig.savefig(raw_deriv_dis_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+            except Exception as e:
+                print(f"Failed to save raw derivative figures: {e}")
 
         # save raw dissipation plots
         dis_fn = f"qcmd-plots/RAW-dissipation-plot"
