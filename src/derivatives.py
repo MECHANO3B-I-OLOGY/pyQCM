@@ -10,7 +10,7 @@ from typing import Sequence, Tuple, Optional
 import numpy as np
 
 
-def seconds_to_window_length(seconds: float, x_arr: np.ndarray, y_len: int, min_window: int = 3) -> int:
+def seconds_to_window_length(seconds: float, x_arr: np.ndarray, y_len: int, min_window: int = 60) -> int:
     """Convert a window length given in seconds to an odd integer sample window.
 
     Args:
