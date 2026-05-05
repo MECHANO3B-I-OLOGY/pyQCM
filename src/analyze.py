@@ -40,43 +40,122 @@ def export_derivative_csvs(input_obj, output_dir: str = 'qcmd-plots'):
 
     plot_customs = get_plot_preferences()
 
+    # prepare cleaned slice & baseline if user requested clean outputs
+    cleaned_source_df = None
+    baseline_df = None
+    if input_obj.will_plot_clean_data:
+        t0_str = str(input_obj.abs_base_t0).lstrip('0')
+        tf_str = str(input_obj.abs_base_tf).lstrip('0')
+        if input_obj.is_relative_time:
+            base_t0_ind = find_nearest_time(input_obj.rel_t0, df, analysis.time_col, input_obj.is_relative_time)
+        else:
+            base_t0_ind = find_nearest_time(t0_str, df, analysis.abs_time_col, input_obj.is_relative_time)
+        cleaned_source_df = df[base_t0_ind:].reset_index(drop=True)
+        if input_obj.is_relative_time:
+            base_tf_ind = find_nearest_time(input_obj.rel_tf, cleaned_source_df, analysis.time_col, input_obj.is_relative_time)
+        else:
+            base_tf_ind = find_nearest_time(tf_str, cleaned_source_df, analysis.abs_time_col, input_obj.is_relative_time)
+        baseline_df = cleaned_source_df[:base_tf_ind].copy()
+
     # helper to process a set of channels and build a wide DataFrame
-    def _process_channels(which_key, channels):
-        out_df = None
+    def _process_channels(which_key, channels, clean=False):
+        out_deriv = None
+        out_smooth = None
         for ch in channels:
             try:
-                data_df = df[[analysis.time_col, ch]].copy().dropna()
+                # select source depending on clean vs raw
+                source_df = cleaned_source_df if clean and cleaned_source_df is not None else df
+                data_df = source_df[[analysis.time_col, ch]].copy().dropna()
                 if data_df.empty:
                     continue
-                # baseline shift: shift to start at zero using first time
+
+                # baseline correction / normalization / slope-correction for clean outputs
+                if clean:
+                    # normalize by overtone if requested
+                    if input_obj.will_normalize_F and ch.__contains__('freq'):
+                        overtone = get_num_from_string(ch)
+                        data_df[ch] = data_df[ch] / overtone
+                        try:
+                            baseline_df[ch] = baseline_df[ch] / overtone
+                        except Exception:
+                            pass
+
+                    # compute and subtract baseline average when possible
+                    try:
+                        rf_base_avg = baseline_df[ch].mean() if ch in baseline_df.columns else 0
+                        data_df[ch] = data_df[ch] - rf_base_avg
+                    except Exception:
+                        pass
+
+                # shift x to start at zero and apply time scale divisor
                 baseline_start = data_df[analysis.time_col].iloc[0]
                 data_df[analysis.time_col] -= baseline_start
                 data_df[analysis.time_col] /= get_time_scale_divisor(plot_customs['time_scale'])
-                x_time = data_df[analysis.time_col].values
-                y = data_df[ch].values
-                y_smooth, y_deriv = calculate_derivative(y, x_time)
-                # assemble into dataframe
-                temp = pd.DataFrame({ 'Time': x_time, f"{ch}_smoothed": y_smooth, f"{ch}_derivative": y_deriv })
-                if out_df is None:
-                    out_df = temp
+
+                # prepare Series for slope correction (match analyze_data order)
+                x_time_series = data_df[analysis.time_col]
+                y_series = data_df[ch]
+
+                # unit conversion for dissipation channels (do this before slope correction)
+                if ch.__contains__('dis') and not input_obj.is_qsd:
+                    y_series = y_series * 1000000
+
+                # apply slope correction if requested (only for clean path)
+                if clean and input_obj.will_correct_slope:
+                    try:
+                        x_time_corr, y_corr = shift_by_slope(x_time_series, y_series, baseline_df, analysis.time_col, ch)
+                        x_time = x_time_corr.values if hasattr(x_time_corr, 'values') else x_time_corr
+                        y = y_corr.values if hasattr(y_corr, 'values') else y_corr
+                    except Exception as e:
+                        print(f"Failed slope correction for {ch}: {e}")
+                        x_time = x_time_series.values
+                        y = y_series.values
                 else:
-                    # merge on Time using outer join
-                    out_df = pd.merge(out_df, temp, on='Time', how='outer')
+                    x_time = x_time_series.values
+                    y = y_series.values
+
+                y_smooth, y_deriv = calculate_derivative(y, x_time)
+
+                # assemble separate dataframes for derivatives and smoothed signals
+                temp_deriv = pd.DataFrame({'Time': x_time, f"{ch}_derivative": y_deriv})
+                temp_smooth = pd.DataFrame({'Time': x_time, f"{ch}_smoothed": y_smooth})
+
+                if out_deriv is None:
+                    out_deriv = temp_deriv
+                else:
+                    out_deriv = pd.merge(out_deriv, temp_deriv, on='Time', how='outer')
+
+                if out_smooth is None:
+                    out_smooth = temp_smooth
+                else:
+                    out_smooth = pd.merge(out_smooth, temp_smooth, on='Time', how='outer')
+
             except Exception as e:
                 print(f"Failed to process channel {ch}: {e}")
-        return out_df
+
+        # final assembly: derivatives first, then smoothed (Time appears once)
+        if out_deriv is None and out_smooth is None:
+            return None
+        if out_deriv is None:
+            return out_smooth
+        if out_smooth is None:
+            return out_deriv
+
+        # merge derivatives and smoothed keeping derivatives columns before smoothed
+        combined = pd.merge(out_deriv, out_smooth, on='Time', how='outer')
+        return combined
 
     # process clean channels if requested
     if input_obj.will_plot_clean_data:
         clean_freqs, clean_disps = get_channels(input_obj.which_plot['clean'].items())
         # process frequency channels
-        clean_freq_df = _process_channels('clean', clean_freqs)
+        clean_freq_df = _process_channels('clean', clean_freqs, clean=True)
         if clean_freq_df is not None:
             fn = os.path.join(output_dir, 'clean_frequency_derivatives.csv')
             clean_freq_df.sort_values('Time').to_csv(fn, index=False)
             print(f"Wrote clean frequency derivatives to {fn}")
         # process dissipation channels
-        clean_disp_df = _process_channels('clean', clean_disps)
+        clean_disp_df = _process_channels('clean', clean_disps, clean=True)
         if clean_disp_df is not None:
             fn = os.path.join(output_dir, 'clean_dissipation_derivatives.csv')
             clean_disp_df.sort_values('Time').to_csv(fn, index=False)
