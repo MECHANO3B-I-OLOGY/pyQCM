@@ -877,6 +877,10 @@ def analyze_data(input):
             deriv_freq_ax = deriv_freq_fig.add_subplot(111)
             deriv_dis_fig = plt.figure()
             deriv_dis_ax = deriv_dis_fig.add_subplot(111)
+            smooth_freq_fig = plt.figure()
+            smooth_freq_ax = smooth_freq_fig.add_subplot(111)
+            smooth_dis_fig = plt.figure()
+            smooth_dis_ax = smooth_dis_fig.add_subplot(111)
 
         if input.will_plot_dF_dD_together:
             mult_fig, mult_ax1 = plt.subplots()
@@ -995,13 +999,15 @@ def analyze_data(input):
 
             if input.will_plot_derivatives:
                 try:
-                    freq_deriv = calculate_derivative(y_freq.values, x_time_freq.values)
-                    dis_deriv = calculate_derivative(y_dis.values, x_time_dis.values)
+                    freq_smooth, freq_deriv = calculate_derivative(y_freq.values, x_time_freq.values)
+                    dis_smooth, dis_deriv = calculate_derivative(y_dis.values, x_time_dis.values)
                     print(f"derivatives.calculate_derivative returned for {clean_freqs[i]} (len={len(freq_deriv)}), {clean_disps[i]} (len={len(dis_deriv)})")
                     if getattr(freq_deriv, 'size', 0) > 0:
                         deriv_freq_ax.plot(x_time_freq[::points_idx], freq_deriv[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_freqs[i]))} d(Δf)/dt", color=freq_color_map[clean_freqs[i]])
+                        smooth_freq_ax.plot(x_time_freq[::points_idx], freq_smooth[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_freqs[i]))} smoothed Δf", color=freq_color_map[clean_freqs[i]])
                     if getattr(dis_deriv, 'size', 0) > 0:
                         deriv_dis_ax.plot(x_time_dis[::points_idx], dis_deriv[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_disps[i]))} d(ΔD)/dt", color=dis_color_map[clean_disps[i]])
+                        smooth_dis_ax.plot(x_time_dis[::points_idx], dis_smooth[::points_idx], '.', markersize=1, label=f"{ordinal(get_num_from_string(clean_disps[i]))} smoothed ΔD", color=dis_color_map[clean_disps[i]])
                 except Exception as e:
                     print(f"Derivative compute/plot failed: {e}")
             if i < freq_plot_cap:
@@ -1070,11 +1076,23 @@ def analyze_data(input):
                 deriv_freq_ax.autoscale_view()
                 deriv_freq_fig.savefig(f"qcmd-plots/derivative_deltaf_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 
+                smooth_freq_fn = f"qcmd-plots/smoothed_deltaf_plot"
+                setup_plot(smooth_freq_fig, smooth_freq_ax, fig_x, r"Δf", "Smoothed Δf vs Time", smooth_freq_fn)
+                smooth_freq_ax.relim()
+                smooth_freq_ax.autoscale_view()
+                smooth_freq_fig.savefig(f"qcmd-plots/smoothed_deltaf_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
                 deriv_dis_fn = f"qcmd-plots/derivative_deltad_plot"
                 setup_plot(deriv_dis_fig, deriv_dis_ax, fig_x, r"d(ΔD)/dt", "Derivative of ΔD vs Time", deriv_dis_fn)
                 deriv_dis_ax.relim()
                 deriv_dis_ax.autoscale_view()
                 deriv_dis_fig.savefig(f"qcmd-plots/derivative_deltad_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
+                smooth_dis_fn = f"qcmd-plots/smoothed_deltad_plot"
+                setup_plot(smooth_dis_fig, smooth_dis_ax, fig_x, r"ΔD", "Smoothed ΔD vs Time", smooth_dis_fn)
+                smooth_dis_ax.relim()
+                smooth_dis_ax.autoscale_view()
+                smooth_dis_fig.savefig(f"qcmd-plots/smoothed_deltad_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
             except Exception as e:
                 print(f"Failed to save derivative figures: {e}")
         
@@ -1110,6 +1128,10 @@ def analyze_data(input):
             raw_deriv_freq_ax = raw_deriv_freq_fig.add_subplot(111)
             raw_deriv_dis_fig = plt.figure()
             raw_deriv_dis_ax = raw_deriv_dis_fig.add_subplot(111)
+            raw_smooth_freq_fig = plt.figure()
+            raw_smooth_freq_ax = raw_smooth_freq_fig.add_subplot(111)
+            raw_smooth_dis_fig = plt.figure()
+            raw_smooth_dis_ax = raw_smooth_dis_fig.add_subplot(111)
         # gather and plot raw frequency data
         for i in range(len(raw_freqs)):
             freq_df = df[[analysis.time_col,raw_freqs[i]]]
@@ -1117,10 +1139,11 @@ def analyze_data(input):
             y_freq = freq_df[raw_freqs[i]]
             if input.will_plot_derivatives:
                 try:
-                    freq_deriv = calculate_derivative(y_freq.values, x_time.values)
+                    freq_smooth, freq_deriv = calculate_derivative(y_freq.values, x_time.values)
                     print(f"derivatives.calculate_derivative returned for raw {raw_freqs[i]} (len={len(freq_deriv)})")
                     if getattr(freq_deriv, 'size', 0) > 0:
                         raw_deriv_freq_ax.plot(x_time[::points_idx], freq_deriv[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_freqs[i])) + ' d(f)/dt', color=freq_color_map[raw_freqs[i]])
+                        raw_smooth_freq_ax.plot(x_time[::points_idx], freq_smooth[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_freqs[i])) + ' smoothed f', color=freq_color_map[raw_freqs[i]])
                 except Exception as e:
                     print(f"Raw derivative failed: {e}")
 
@@ -1135,10 +1158,11 @@ def analyze_data(input):
             y_dis = dis_df[raw_disps[i]]
             if input.will_plot_derivatives:
                 try:
-                    dis_deriv = calculate_derivative(y_dis.values, x_time.values)
+                    dis_smooth, dis_deriv = calculate_derivative(y_dis.values, x_time.values)
                     print(f"derivatives.calculate_derivative returned for raw {raw_disps[i]} (len={len(dis_deriv)})")
                     if getattr(dis_deriv, 'size', 0) > 0:
                         raw_deriv_dis_ax.plot(x_time[::points_idx], dis_deriv[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_disps[i])) + ' d(D)/dt', color=dis_color_map[raw_disps[i]])
+                        raw_smooth_dis_ax.plot(x_time[::points_idx], dis_smooth[::points_idx], '.', markersize=1, label=ordinal(get_num_from_string(raw_disps[i])) + ' smoothed D', color=dis_color_map[raw_disps[i]])
                 except Exception as e:
                     print(f"Raw derivative failed: {e}")
 
@@ -1156,11 +1180,23 @@ def analyze_data(input):
                 raw_deriv_freq_ax.autoscale_view()
                 raw_deriv_freq_fig.savefig(raw_deriv_freq_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 
+                raw_smooth_freq_fn = f"qcmd-plots/RAW-smoothed_deltaf_plot"
+                setup_plot(raw_smooth_freq_fig, raw_smooth_freq_ax, fig_x, r"Δf", "Raw Smoothed Δf vs Time", raw_smooth_freq_fn)
+                raw_smooth_freq_ax.relim()
+                raw_smooth_freq_ax.autoscale_view()
+                raw_smooth_freq_fig.savefig(raw_smooth_freq_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
                 raw_deriv_dis_fn = f"qcmd-plots/RAW-derivative_deltad_plot"
                 setup_plot(raw_deriv_dis_fig, raw_deriv_dis_ax, fig_x, r"d(ΔD)/dt", "Raw Derivative of ΔD vs Time", raw_deriv_dis_fn)
                 raw_deriv_dis_ax.relim()
                 raw_deriv_dis_ax.autoscale_view()
                 raw_deriv_dis_fig.savefig(raw_deriv_dis_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
+
+                raw_smooth_dis_fn = f"qcmd-plots/RAW-smoothed_deltad_plot"
+                setup_plot(raw_smooth_dis_fig, raw_smooth_dis_ax, fig_x, r"ΔD", "Raw Smoothed ΔD vs Time", raw_smooth_dis_fn)
+                raw_smooth_dis_ax.relim()
+                raw_smooth_dis_ax.autoscale_view()
+                raw_smooth_dis_fig.savefig(raw_smooth_dis_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
             except Exception as e:
                 print(f"Failed to save raw derivative figures: {e}")
 
