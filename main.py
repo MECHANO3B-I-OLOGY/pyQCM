@@ -1809,7 +1809,12 @@ class Col4(tk.Frame):
             if not out_dir:
                 return
             export_derivative_csvs(input, out_dir)
-            Exceptions.info_popup(f"Derivative CSVs saved to: {out_dir}")
+            # show the same finished window used for plots, pointing at selected folder
+            try:
+                self.show_path_box(Path(out_dir))
+            except Exception:
+                # fallback to original behavior if show_path_box fails
+                Exceptions.warning_popup(f"Derivative CSVs saved to: {out_dir}")
         except Exception as e:
             print(f"Failed to export derivative CSVs: {e}")
             Exceptions.error_popup(f"Failed to export derivative CSVs: {e}")
@@ -1821,7 +1826,9 @@ class Col4(tk.Frame):
             self.modelling_window = ModelingWindow(self)
             self.modelling_window.open_modeling_window()
 
-    def show_path_box(self):
+    def show_path_box(self, plot_dir: Path = None):
+        # Show the same finished window used after plotting. If plot_dir
+        # is provided, the "Open plots folder" button will open that folder.
         if self.finished_window and self.finished_window.winfo_exists():
             self.finished_window.lift()
         else:
@@ -1829,8 +1836,9 @@ class Col4(tk.Frame):
             self.finished_window.title("Finished Generating Plots")
             self.finished_window.geometry("400x200")
 
-            plot_dir = Path(os.path.join(os.getcwd(), 'qcmd-plots/'))
-            
+            if plot_dir is None:
+                plot_dir = Path(os.path.join(os.getcwd(), 'qcmd-plots/'))
+
             link_label = tk.Label(self.finished_window, text="Plots Generated!\nPress the button to view them.", font=('TkDefaultFont', 10, 'bold'))
             link_label.pack(pady=20)
 
