@@ -25,6 +25,78 @@ import json
 import src.Exceptions as Exceptions
 from src.derivatives import calculate_derivative
 
+
+def export_derivative_csvs(input_obj, output_dir: str = 'qcmd-plots'):
+    """Export smoothed signals and derivatives for selected channels to CSV files.
+
+    Creates two files when applicable: <output_dir>/clean_derivatives.csv and
+    <output_dir>/raw_derivatives.csv. Each file contains a Time column and
+    paired columns for each selected channel: <channel>_smoothed and
+    <channel>_derivative.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    analysis = Analysis(input_obj.file)
+    df = pd.read_csv(analysis.formatted_fn)
+
+    plot_customs = get_plot_preferences()
+
+    # helper to process a set of channels and build a wide DataFrame
+    def _process_channels(which_key, channels):
+        out_df = None
+        for ch in channels:
+            try:
+                data_df = df[[analysis.time_col, ch]].copy().dropna()
+                if data_df.empty:
+                    continue
+                # baseline shift: shift to start at zero using first time
+                baseline_start = data_df[analysis.time_col].iloc[0]
+                data_df[analysis.time_col] -= baseline_start
+                data_df[analysis.time_col] /= get_time_scale_divisor(plot_customs['time_scale'])
+                x_time = data_df[analysis.time_col].values
+                y = data_df[ch].values
+                y_smooth, y_deriv = calculate_derivative(y, x_time)
+                # assemble into dataframe
+                temp = pd.DataFrame({ 'Time': x_time, f"{ch}_smoothed": y_smooth, f"{ch}_derivative": y_deriv })
+                if out_df is None:
+                    out_df = temp
+                else:
+                    # merge on Time using outer join
+                    out_df = pd.merge(out_df, temp, on='Time', how='outer')
+            except Exception as e:
+                print(f"Failed to process channel {ch}: {e}")
+        return out_df
+
+    # process clean channels if requested
+    if input_obj.will_plot_clean_data:
+        clean_freqs, clean_disps = get_channels(input_obj.which_plot['clean'].items())
+        # process frequency channels
+        clean_freq_df = _process_channels('clean', clean_freqs)
+        if clean_freq_df is not None:
+            fn = os.path.join(output_dir, 'clean_frequency_derivatives.csv')
+            clean_freq_df.sort_values('Time').to_csv(fn, index=False)
+            print(f"Wrote clean frequency derivatives to {fn}")
+        # process dissipation channels
+        clean_disp_df = _process_channels('clean', clean_disps)
+        if clean_disp_df is not None:
+            fn = os.path.join(output_dir, 'clean_dissipation_derivatives.csv')
+            clean_disp_df.sort_values('Time').to_csv(fn, index=False)
+            print(f"Wrote clean dissipation derivatives to {fn}")
+
+    # process raw channels if requested
+    if input_obj.will_plot_raw_data:
+        raw_freqs, raw_disps = get_channels(input_obj.which_plot['raw'].items())
+        raw_freq_df = _process_channels('raw', raw_freqs)
+        if raw_freq_df is not None:
+            fn = os.path.join(output_dir, 'raw_frequency_derivatives.csv')
+            raw_freq_df.sort_values('Time').to_csv(fn, index=False)
+            print(f"Wrote raw frequency derivatives to {fn}")
+        raw_disp_df = _process_channels('raw', raw_disps)
+        if raw_disp_df is not None:
+            fn = os.path.join(output_dir, 'raw_dissipation_derivatives.csv')
+            raw_disp_df.sort_values('Time').to_csv(fn, index=False)
+            print(f"Wrote raw dissipation derivatives to {fn}")
+
+
 ''' ANALYSIS VARIABLES '''
 class Analysis:
     def __init__(self, fn):

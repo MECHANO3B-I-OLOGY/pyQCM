@@ -19,7 +19,7 @@ import subprocess
 import platform
 
 import src.Exceptions as Exceptions
-from src.analyze import analyze_data, ordinal, get_interactive_baseline_preview_data
+from src.analyze import analyze_data, ordinal, get_interactive_baseline_preview_data, export_derivative_csvs
 from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
 from src.interactive_baseline_graph import display_interactive_plot
@@ -1739,7 +1739,7 @@ class Col4(tk.Frame):
         self.derivatives_check.grid(row=7, column=4, pady=(6,0))
 
         self.derivatives_frame = tk.Frame(self)
-        self.derivatives_button = tk.Button(self.derivatives_frame, text="Derivatives Button", padx=8, pady=6, width=20, command=self.derivatives_button_action)
+        self.derivatives_button = tk.Button(self.derivatives_frame, text="Export derivative CSVs", padx=8, pady=6, width=20, command=self.derivatives_button_action)
         self.derivatives_button.pack(pady=10)
 
         self.enable_interactive_plot_var = tk.IntVar()
@@ -1803,8 +1803,16 @@ class Col4(tk.Frame):
         print(f"confirmed range: {input.which_range_selecting}")
 
     def derivatives_button_action(self):
-        print("Derivatives button clicked!")
-        Exceptions.warning_popup("Derivatives button was clicked!")
+        # Prompt user for output directory and export derivative CSVs for selected channels
+        try:
+            out_dir = filedialog.askdirectory(initialdir=os.path.join(os.getcwd(), 'qcmd-plots'), title='Select folder to save derivative CSVs')
+            if not out_dir:
+                return
+            export_derivative_csvs(input, out_dir)
+            Exceptions.info_popup(f"Derivative CSVs saved to: {out_dir}")
+        except Exception as e:
+            print(f"Failed to export derivative CSVs: {e}")
+            Exceptions.error_popup(f"Failed to export derivative CSVs: {e}")
 
     def model_window_button(self):
         try:
