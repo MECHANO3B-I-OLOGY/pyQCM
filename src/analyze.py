@@ -1066,16 +1066,14 @@ def analyze_data(input):
             try:
                 deriv_freq_fn = f"qcmd-plots/derivative_deltaf_plot"
                 setup_plot(deriv_freq_fig, deriv_freq_ax, fig_x, r"d(Δf)/dt", "Derivative of Δf vs Time", deriv_freq_fn)
-                plt.sca(deriv_freq_ax)
-                plt.xlim('auto')
-                plt.ylim('auto')
+                deriv_freq_ax.relim()
+                deriv_freq_ax.autoscale_view()
                 deriv_freq_fig.savefig(f"qcmd-plots/derivative_deltaf_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 
                 deriv_dis_fn = f"qcmd-plots/derivative_deltad_plot"
                 setup_plot(deriv_dis_fig, deriv_dis_ax, fig_x, r"d(ΔD)/dt", "Derivative of ΔD vs Time", deriv_dis_fn)
-                plt.sca(deriv_dis_ax)
-                plt.xlim('auto')
-                plt.ylim('auto')
+                deriv_dis_ax.relim()
+                deriv_dis_ax.autoscale_view()
                 deriv_dis_fig.savefig(f"qcmd-plots/derivative_deltad_plot.{plot_customs['fig_format']}", format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
             except Exception as e:
                 print(f"Failed to save derivative figures: {e}")
@@ -1154,16 +1152,14 @@ def analyze_data(input):
             try:
                 raw_deriv_freq_fn = f"qcmd-plots/RAW-derivative_deltaf_plot"
                 setup_plot(raw_deriv_freq_fig, raw_deriv_freq_ax, fig_x, r"d(Δf)/dt", "Raw Derivative of Δf vs Time", raw_deriv_freq_fn)
-                plt.sca(raw_deriv_freq_ax)
-                plt.xlim('auto')
-                plt.ylim('auto')
+                raw_deriv_freq_ax.relim()
+                raw_deriv_freq_ax.autoscale_view()
                 raw_deriv_freq_fig.savefig(raw_deriv_freq_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
 
                 raw_deriv_dis_fn = f"qcmd-plots/RAW-derivative_deltad_plot"
                 setup_plot(raw_deriv_dis_fig, raw_deriv_dis_ax, fig_x, r"d(ΔD)/dt", "Raw Derivative of ΔD vs Time", raw_deriv_dis_fn)
-                plt.sca(raw_deriv_dis_ax)
-                plt.xlim('auto')
-                plt.ylim('auto')
+                raw_deriv_dis_ax.relim()
+                raw_deriv_dis_ax.autoscale_view()
                 raw_deriv_dis_fig.savefig(raw_deriv_dis_fn + '.' + plot_customs['fig_format'], format=plot_customs['fig_format'], bbox_inches='tight', transparent=True, dpi=dpi)
             except Exception as e:
                 print(f"Failed to save raw derivative figures: {e}")
