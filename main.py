@@ -1642,6 +1642,8 @@ class Col3(tk.Frame):
                 else:
                     input.which_plot[cb.key[0]][cb.key[1]] = False        
 
+            self.parent.col4.sync_derivative_controls()
+
         else:
             input.will_plot_clean_data = False
             self.which_clean_channels_label.grid_forget()
@@ -1651,6 +1653,8 @@ class Col3(tk.Frame):
 
             self.select_all_clean_checks_button.grid_forget()
             self.clear_clean_checks_button.grid_forget()
+
+            self.parent.col4.sync_derivative_controls()
 
     def clear_clean_checks(self):
         global input
@@ -1758,6 +1762,18 @@ class Col4(tk.Frame):
         self.exit_button = tk.Button(self, text="Exit", padx=8, pady=6, width=20, command=self.parent.on_exit)
         self.exit_button.grid(row=23, column=4, pady=4)
 
+        self.sync_derivative_controls()
+
+    def sync_derivative_controls(self):
+        global input
+        if input.will_plot_clean_data:
+            self.derivatives_check.config(state=tk.NORMAL)
+        else:
+            self.derivatives_var.set(0)
+            input.will_plot_derivatives = False
+            self.derivatives_frame.grid_forget()
+            self.derivatives_check.config(state=tk.DISABLED)
+
     def receive_optional_checkboxes(self):
         global input
         set_input_altered_flag(True)
@@ -1768,6 +1784,11 @@ class Col4(tk.Frame):
         input.will_correct_slope = True if self.correct_slope_var.get() == 1 else False
         input.enable_interactive_plot = True if self.enable_interactive_plot_var.get() == 1 else False
         input.will_plot_derivatives = True if self.derivatives_var.get() == 1 else False
+
+        if not input.will_plot_clean_data and self.derivatives_var.get() == 1:
+            self.derivatives_var.set(0)
+            input.will_plot_derivatives = False
+            Exceptions.warning_popup("Derivative plotting/export requires clean (shifted) data selection.")
 
         if self.derivatives_var.get() == 1:
             self.derivatives_frame.grid(row=8, column=4, pady=(6,0))
@@ -1805,13 +1826,16 @@ class Col4(tk.Frame):
     def derivatives_button_action(self):
         # Prompt user for output directory and export derivative CSVs for selected channels
         try:
+            if not input.will_plot_clean_data:
+                Exceptions.warning_popup("Select clean (shifted) data before exporting derivative CSVs.")
+                return
             out_dir = filedialog.askdirectory(initialdir=os.path.join(os.getcwd(), 'qcmd-plots'), title='Select folder to save derivative CSVs')
             if not out_dir:
                 return
             export_derivative_csvs(input, out_dir)
-            # show the same finished window used for plots, pointing at selected folder
+            # show the same finished window shell with derivative-export-specific text
             try:
-                self.show_path_box(Path(out_dir))
+                self.show_path_box(Path(out_dir), for_derivatives=True)
             except Exception:
                 # fallback to original behavior if show_path_box fails
                 Exceptions.warning_popup(f"Derivative CSVs saved to: {out_dir}")
@@ -1826,24 +1850,26 @@ class Col4(tk.Frame):
             self.modelling_window = ModelingWindow(self)
             self.modelling_window.open_modeling_window()
 
-    def show_path_box(self, plot_dir: Path = None):
-        # Show the same finished window used after plotting. If plot_dir
-        # is provided, the "Open plots folder" button will open that folder.
+    def show_path_box(self, plot_dir: Path = None, for_derivatives: bool = False):
+        # Show finished window with context-specific text for plots vs derivative CSV exports.
         if self.finished_window and self.finished_window.winfo_exists():
-            self.finished_window.lift()
-        else:
-            self.finished_window = tk.Toplevel(self)
-            self.finished_window.title("Finished Generating Plots")
-            self.finished_window.geometry("400x200")
+            self.finished_window.destroy()
 
-            if plot_dir is None:
-                plot_dir = Path(os.path.join(os.getcwd(), 'qcmd-plots/'))
+        self.finished_window = tk.Toplevel(self)
+        self.finished_window.title("Finished Exporting Derivative CSVs" if for_derivatives else "Finished Generating Plots")
+        self.finished_window.geometry("420x200")
 
-            link_label = tk.Label(self.finished_window, text="Plots Generated!\nPress the button to view them.", font=('TkDefaultFont', 10, 'bold'))
-            link_label.pack(pady=20)
+        if plot_dir is None:
+            plot_dir = Path(os.path.join(os.getcwd(), 'qcmd-plots/'))
 
-            open_folder_btn = tk.Button(self.finished_window, text="Open plots folder", command=lambda: open_folder(plot_dir))
-            open_folder_btn.pack(pady=20)
+        label_text = "Derivative CSVs exported.\nPress the button to view them." if for_derivatives else "Plots Generated!\nPress the button to view them."
+        button_text = "Open CSV folder" if for_derivatives else "Open plots folder"
+
+        link_label = tk.Label(self.finished_window, text=label_text, font=('TkDefaultFont', 10, 'bold'))
+        link_label.pack(pady=20)
+
+        open_folder_btn = tk.Button(self.finished_window, text=button_text, command=lambda: open_folder(plot_dir))
+        open_folder_btn.pack(pady=20)
 
     def submit(self):
         global input
