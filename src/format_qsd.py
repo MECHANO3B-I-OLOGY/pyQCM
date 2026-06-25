@@ -28,7 +28,12 @@ def read_qsd(filename):
     pointer += 16
     newn = struct.unpack('<I', d[pointer:pointer+4])[0]
     if newn != n+1:
-        raise Exception("Invalid size repetition")
+        # different file format inserts an extra 16-byte block between the 0xee
+        # sentinel and the size-check field.  Try stepping over it.
+        pointer += 16
+        newn = struct.unpack('<I', d[pointer:pointer+4])[0]
+        if newn != n+1:
+            raise Exception("Invalid size repetition")
     pointer += 4     # skip length information
     if d[pointer] == 0x02:
         pointer += 8 # added to validate BSA dataset
