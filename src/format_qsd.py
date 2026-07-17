@@ -27,28 +27,28 @@ def read_qsd(filename):
         raise Exception("Invalid value: != 0xee")
     pointer += 16
     newn = struct.unpack('<I', d[pointer:pointer+4])[0]
-    if newn != n+1:
-        # different file format inserts an extra 16-byte block between the 0xee
-        # sentinel and the size-check field.  Try stepping over it.
+    if newn == n:
+        # newest file format has no padding element at all: the repeated
+        # size field matches n exactly, with no extra 16-byte block and no
+        # "+1" sample to skip later.
+        no_pad = True
+    elif newn != n+1:
+        # older intermediate format inserts an extra 16-byte block between
+        # the 0xee sentinel and the size-check field. Try stepping over it.
         pointer += 16
         newn = struct.unpack('<I', d[pointer:pointer+4])[0]
         if newn != n+1:
             raise Exception("Invalid size repetition")
-    pointer += 4     # skip length information
-    if d[pointer] == 0x02:
-        pointer += 8 # added to validate BSA dataset
-    if d[pointer] != 0x01:
-        raise Exception("Invalid value: != 0x01")
-    pointer += 12
-    if d[pointer] != 0x0b:
-        raise Exception("Invalid value: != 0x0b")
+        no_pad = False
+    else:
+        no_pad = False
     
     pointer += 6
     val = struct.unpack('<{}d'.format(n), d[pointer:pointer+n*8])
     val = np.array(val)
     tim = (val - val[0])*86400;
     
-    pointer += n*8-1+8*1+3
+    pointer += n*8-1+3 if no_pad else n*8-1+8*1+3
     n = struct.unpack('<I', d[pointer:pointer+4])[0]
     reslen.append(n)
     pointer += 4
