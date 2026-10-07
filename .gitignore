@@ -4,6 +4,7 @@
 qcmd-plots/*.png
 qcmd-plots/*.tiff
 qcmd-plots/*.pdf
+qcmd-plots/*.zip
 
 !qcmd-plots/.gitkeep
 
