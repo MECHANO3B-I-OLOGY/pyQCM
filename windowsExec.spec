@@ -4,6 +4,7 @@ a = Analysis(
     ['main.py'],
     pathex=['src'],
     binaries=[],
+    # default files copied next to the exe on first launch if missing (see src/frozen_workdir.py)
     datas=[
         ('plot_opts', 'plot_opts'),
         ('offset_data', 'offset_data'),
@@ -36,7 +37,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False, # UPX-compressed exes trigger more antivirus false positives
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True, 
