@@ -39,7 +39,7 @@ Please continue below for instructions on using the software.
 
 ## Important Notes before Starting
 ### Supported systems
-- The standalone apps support Windows 10/11 and macOS (Apple Silicon and Intel).
+- The standalone apps support Windows 10/11 and macOS (Apple Silicon Macs on macOS 12 or newer, Intel Macs on macOS 11 or newer).
 - Running from source works on Windows, macOS, and Linux with **Python 3.10** (see [Installation](#installation)).
 - Please [open an issue](https://github.com/MECHANO3B-I-OLOGY/pyQCM/issues) if you run into an incompatibility.
 

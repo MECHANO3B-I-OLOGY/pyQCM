@@ -82,15 +82,28 @@ jobs:
             arch: apple-silicon
           - runner: macos-15-intel
             arch: intel
+    env:
+      # sha256 of the official python.org macOS installer for PYTHON_VERSION (update both together)
+      PYTHON_PKG_SHA256: '767ed35ad688d28ea4494081ae96408a0318d0d5bb9ca0139d74d6247b231cfc'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+      - name: Install Python ${{ env.PYTHON_VERSION }} (python.org installer)
+        # setup-python's Intel macOS builds of Python 3.10 are compiled from source with mismatched Tcl/Tk
+        # (tk.h 8.5 vs libtk 8.6), so tkinter cannot start. The official universal2 installer ships its own
+        # Tcl/Tk 8.6 and is used for both architectures so the two macOS apps are built identically.
+        run: |
+          pkg="$RUNNER_TEMP/python-${PYTHON_VERSION}-macos11.pkg"
+          curl -fsSL -o "$pkg" "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-macos11.pkg"
+          echo "${PYTHON_PKG_SHA256}  $pkg" | shasum -a 256 -c -
+          sudo installer -pkg "$pkg" -target /
+          "/Library/Frameworks/Python.framework/Versions/${PYTHON_VERSION%.*}/bin/python3" -m venv "$RUNNER_TEMP/venv"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Check tkinter works
+        run: |
+          python -c "import platform, sys, tkinter; root = tkinter.Tk(); print(sys.version, platform.machine(), 'Tk', root.tk.call('info', 'patchlevel')); root.destroy()"
 
       - name: Install dependencies
         run: |
