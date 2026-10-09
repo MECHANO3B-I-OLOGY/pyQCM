@@ -23,6 +23,7 @@ from src.analyze import analyze_data, ordinal, get_interactive_baseline_preview_
 from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
 from src.interactive_baseline_graph import display_interactive_plot
+from src.frozen_workdir import setup_frozen_workdir
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -1911,6 +1912,23 @@ class Col4(tk.Frame):
             file.close()
 
 
+def run_smoke_test(app):
+    """used by the build workflows to check a standalone build actually runs:
+    formats the bundled sample data (exercises pandas/numpy/qsd parsing), then closes the UI after 2 seconds.
+    Any exception propagates and exits with a nonzero code, failing the build.
+    """
+    format_raw_data('QCM-i', 'sample_generations/qcmi-bsa-after/QSM-I-BSA_1mgpml.csv', True)
+    format_raw_data('Qsense', 'sample_generations/qsense-bsa-after/BSA.1mgml-1.280723_QSD.qsd', True)
+    for fn in ('raw_data/Formatted-QSM-I-BSA_1mgpml.csv', 'raw_data/Formatted-BSA.1mgml-1.280723_QSD.csv'):
+        if not os.path.exists(fn):
+            raise FileNotFoundError(f"smoke test: expected formatted output '{fn}' was not written")
+    print("SMOKE TEST PASSED")
+    app.after(2000, app.destroy)
+
+
 if __name__ == '__main__':
+    setup_frozen_workdir()
     menu = App()
+    if '--smoke-test' in sys.argv:
+        run_smoke_test(menu)
     menu.mainloop()

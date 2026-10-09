@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-
-block_cipher = None
+# Build with: pyinstaller macExec.spec  ->  dist/pyQCM.app
+# onedir (EXE + COLLECT) inside the .app, onefile .app bundles are deprecated by PyInstaller 6 and blocked in 7
 
 a = Analysis(
     ['main.py'],
     pathex=['src'],
     binaries=[],
+    # default files copied into the user's data folder on first launch (see src/frozen_workdir.py)
     datas=[
         ('plot_opts', 'plot_opts'),
         ('offset_data', 'offset_data'),
@@ -13,60 +14,63 @@ a = Analysis(
         ('res', 'res'),
     ],
     hiddenimports=[
-        'pandas', 
-        'numpy', 
-        'scipy', 
-        'matplotlib', 
-        'matplotlib.backends.backend_tkagg', 
-        'matplotlib.backends.backend_pdf', 
-        'matplotlib.backends.backend_agg', 
-        'xlrd', 
-        'openpyxl', 
+        'pandas',
+        'numpy',
+        'scipy',
+        'matplotlib',
+        'matplotlib.backends.backend_tkagg',
+        'matplotlib.backends.backend_pdf',
+        'matplotlib.backends.backend_agg',
+        'xlrd',
+        'openpyxl',
         'datetime'
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='pyQCM',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=True,  # Shows the Terminal window alongside your app
+    upx=False,
+    console=False, # .app bundles do not get a terminal; run pyQCM.app/Contents/MacOS/pyQCM from Terminal to see output
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch=None, # native arch of the build machine, the workflow builds arm64 and x86_64 separately
     codesign_identity=None,
     entitlements_file=None,
 )
 
-# This creates the pyQCM.app folder for macOS
-app = BUNDLE(
+coll = COLLECT(
     exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name='pyQCM',
+)
+
+app = BUNDLE(
+    coll,
     name='pyQCM.app',
     icon=None,
     bundle_identifier='com.pyqcm.app',
     info_plist={
-        'CFBundleShortVersionString': '1.0.0',
-        'CFBundleBundleName': 'pyQCM',
+        'CFBundleName': 'pyQCM',
+        'CFBundleDisplayName': 'pyQCM',
+        'CFBundleShortVersionString': '1.4.0',
         'NSHighResolutionCapable': 'True',
     },
 )

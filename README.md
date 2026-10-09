@@ -1,9 +1,31 @@
+# pyQCM-BraTaDio
 
-# py-QCM-BraTaDio README
+[![JOSS DOI](https://joss.theoj.org/papers/10.21105/joss.06831/status.svg)](https://doi.org/10.21105/joss.06831)
+[![Latest release](https://img.shields.io/github/v/release/MECHANO3B-I-OLOGY/pyQCM?label=download)](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest)
+[![Build](https://github.com/MECHANO3B-I-OLOGY/pyQCM/actions/workflows/build.yml/badge.svg)](https://github.com/MECHANO3B-I-OLOGY/pyQCM/actions/workflows/build.yml)
 
-## View the JOSS publication of this software here!
-[![DOI](https://joss.theoj.org/papers/10.21105/joss.06831/status.svg)](https://doi.org/10.21105/joss.06831)
+pyQCM-BraTaDio is free, open-source software for visualization, data mining, and modelling of QCM-D data from several instrument manufacturers. **Windows and macOS users can [download the standalone app](#installation), no Python required.**
 
+> **Version note:** The version reviewed and published in the [JOSS paper](https://doi.org/10.21105/joss.06831) is tag
+> [`b.1.2.6`](https://github.com/MECHANO3B-I-OLOGY/pyQCM/tree/b.1.2.6), permanently archived on [Zenodo](https://doi.org/10.5281/zenodo.12668677).
+> The latest code in this repository and the [latest release](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest) are the actively maintained version, with the features and fixes listed below, and are recommended for all new users.
+> If this software contributes to your work, please [cite the paper](#citing).
+
+## What's new since the JOSS publication
+Contributed by [Benjamin Huefner](https://github.com/BenjaminHuefner):
+- **Standalone Windows and macOS apps**, no Python installation needed
+- **Interactive baseline selection**: drag the baseline range on a preview plot instead of typing in times
+- **Derivative plots** of Δf and ΔD using Savitzky-Golay smoothing, with CSV export of the smoothed signals and derivatives
+- R² reported on modelling fits, and updated shear dependent compliance for thin film in liquid
+- Support for a newer QSense `.qsd` byte format, and a fix for truncated `.qsd` input
+
+Contributed by [Brandon Pardi](https://github.com/b-pardi):
+- More robust reading of raw QSense `.qsd` files: detects which overtones were actually exported, and handles recordings where overtones were briefly interrupted (data saved in two sections instead of one)
+- `.qsd` inspection utility for troubleshooting: `python -m src.format_qsd <file.qsd>` (from the repository root) prints where each overtone's data block is in the file and any missing samples
+- Bug fixes for the thin film models and `.qsd` time alignment
+- Standalone app packaging fixes: Intel Mac builds, a per-user data folder so the apps work wherever they are launched from, and automated launch tests
+
+See the [Releases page](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases) for details on each version.
 
 ## Statement of Need
 
@@ -16,12 +38,10 @@ Please continue below for instructions on using the software.
 [![pQCM-BraTaDio Video Demo](https://img.youtube.com/vi/j6H9xrnw8Ms/0.jpg)](https://www.youtube.com/watch?v=j6H9xrnw8Ms)
 
 ## Important Notes before Starting
-### This software was designed and tested in a WINDOWS environment
-- If using Mac or Linux, please be aware that issues may occur
-- Create a new issue in git if there is an incompatibility
-
-### The only verified Python version this software has been fully tested on is 3.10.x
-- Others will likely work, but cannot be verified at this time
+### Supported systems
+- The standalone apps support Windows 10/11 and macOS (Apple Silicon and Intel).
+- Running from source works on Windows, macOS, and Linux with **Python 3.10** (see [Installation](#installation)).
+- Please [open an issue](https://github.com/MECHANO3B-I-OLOGY/pyQCM/issues) if you run into an incompatibility.
 
 ### This software is capable of reading RAW QSENSE files (*.qsd)
 - Simply select your data file and select QSense device, proceeding as follows in the 'File Information' Section
@@ -30,54 +50,58 @@ Please continue below for instructions on using the software.
 
 ### Clicking submit after giving required information to the UI will generate a variable number of plots based on what analysis is desired
 
-### IF USING SPYDER
-- By default, plt will show plots in console box and span selector will not work.
-- Follow these steps to make selection plots open in new window:
-Tools > Preferences > IPython console > Graphics > Graphics Backend > Apply & OK.
+## Installation
+### Option 1: Standalone app (recommended, no Python needed)
+1. Go to the [latest release](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest) and, under **Assets**, download the zip file for your computer:
+	- Windows: `pyQCM-Windows.zip`
+	- Mac with Apple Silicon (M1, M2, M3, ...): `pyQCM-macOS-apple-silicon.zip`
+	- Mac with an Intel processor: `pyQCM-macOS-intel.zip`
+		- Not sure which Mac you have? Apple menu > About This Mac, and look at "Chip" or "Processor".
+2. Extract (unzip) the file. **Do not run the app from inside the zip file.**
 
-## Getting Started
-There are two methods for downloading the package.
-### For developers or those who may want to contribute in some fashion
-- Clone the repository into a directory of your choosing
-	- In a terminal, create or navigate to the folder you want to download the code to
-	- Run the command `git clone https://github.com/b-pardi/BraTaDio.git`
-	- You should now have all the required files
-### For those without programming experience that simply want to use the software
-- Download the zip file
-	- In the webpage for this repository, click the button that says 'code' (1)
-	- At the bottom of the drop down, click the 'Download ZIP' button (2)
-	- Extract the zip file to a folder of your choice
+#### Windows
+- Move the extracted `pyQCM-Windows` folder somewhere you can write to, such as Documents or Desktop (not Program Files).
+- Double-click `pyQCMWindows.exe`. A console window opens alongside the app showing progress messages and any errors; leave it open while using the app.
+- The first time, Windows may show "Windows protected your PC". Click **More info**, then **Run anyway**. This appears because the app is not code-signed.
+- On first launch the app creates its data folders (`raw_data`, `qcmd-plots`, `selected_ranges`, `offset_data`, `plot_opts`, `sample_generations`) next to `pyQCMWindows.exe`. These are the folders referred to throughout this README.
 
-![Github repository page for BraTaDio. (1) First button to click to drop down the menu to download the zip file. (2) Download ZIP file button](figs/zip_file_loc.png)
+#### macOS
+- Optionally move `pyQCM.app` to your Applications folder, then double-click it.
+- The first time, macOS will block the app because it is not from an identified developer. Open **System Settings > Privacy & Security**, scroll down, click **Open Anyway** next to the message about pyQCM, and confirm.
+	- If macOS instead says the app "is damaged and can't be opened", open Terminal and run `xattr -dr com.apple.quarantine /Applications/pyQCM.app` (adjust the path to wherever you put the app), then open it again.
+- If asked whether pyQCM may access files in your Documents folder, click **Allow**.
+- The app keeps its data folders (`raw_data`, `qcmd-plots`, `selected_ranges`, `offset_data`, `plot_opts`, `sample_generations`) in **Documents/pyQCM** (or in a `pyQCM` folder in your home folder if Documents access was not allowed). These are the folders referred to throughout this README.
+- To see progress messages and errors (e.g. for a bug report), start the app from Terminal: `/Applications/pyQCM.app/Contents/MacOS/pyQCM`
 
-### Once downloaded, the remaining steps apply to both cases
-- In a terminal, make sure you are in the parent directory of the code
-	- Your current path should look like: `C:\path\to\directory\BraTaDio` with the key component being that the directory ends with 'BraTaDio'
-	- If not, use the `cd` command to navigate to the directory
-		- If you cloned the repository, you only need to move one directory: `cd BraTaDio`
-		- If you extracted the ZIP file, use your file explorer to find the code you extracted and enter the BraTaDio folder
-		- Then copy the folder path
-		- In a terminal, type: `cd "<paste your path here>"` ensuring you have the quotes
+### Option 2: Run from source (developers, contributors, and Linux users)
+Requires **Python 3.10**, as the pinned dependencies do not install on newer Python versions. Get it from https://www.python.org/downloads/ if needed. On Linux, also install tkinter (e.g. `sudo apt install python3-tk`).
+- Get the code
+	- With git: `git clone https://github.com/MECHANO3B-I-OLOGY/pyQCM.git`, then `cd pyQCM`
+	- Without git: on the repository page click **Code > Download ZIP**, extract it, and in a terminal `cd "<path to the extracted folder>"` (with the quotes)
 	- **Note for Spyder**: you can open a terminal by going to `menu > View > Panes > Terminal`
-- Setup virtual environment (optional but reccommended)
-	- Create the virtual environment: `python -m venv .venv`
+- Setup virtual environment (optional but recommended)
+	- Create the virtual environment with Python 3.10: `python3.10 -m venv .venv` (Windows: `py -3.10 -m venv .venv`)
 	- Activate it
 		- Windows: `.venv\Scripts\activate`
 		- Mac/Linux: `source .venv/bin/activate`
-	- You can also use conda if preferred
-- Install package dependencies
-	- Install with pip using the requirements file: `pip install -r requirements.txt`
-	- If you get an error with this command in Spyder,
-		- Have python 3.10.x installed on your computer (not via spyder, from https://www.python.org/downloads/)
-		- In a command prompt, (not anaconda terminal) type 'where python' on windows, or in a mac terminal type 'which python'
-		- Copy and paste the full path that it prints out
-			- On windows it should look something like: 'C:\<some path stuff>\Python\Python310\python.exe'
-			- In spider, go to tools > preferences > python interpreter
-			- Select 'Use the following Python interpreter:'
-			- Paste in the path you copied earlier from the terminal
-			- Click apply and ok, and restart spyder for changes to take effect
-- Run main.py to get started
-	- **NOTE** main.py is the ONLY python file that should ever be executed. The other scripts are dependend on main.py for UI inputs.
+	- You can also use conda if preferred: `conda create -n pyqcm python=3.10`, then `conda activate pyqcm`
+- Install package dependencies: `pip install -r requirements.txt`
+- Run `python main.py` to get started
+	- **NOTE** main.py is the ONLY python file that should ever be executed. The other scripts depend on main.py for UI inputs.
+
+#### If using Spyder
+- By default, plt will show plots in console box and span selector will not work.
+- Follow these steps to make selection plots open in new window:
+Tools > Preferences > IPython console > Graphics > Graphics Backend > Apply & OK.
+- If you get an error installing the requirements in Spyder,
+	- Have python 3.10.x installed on your computer (not via spyder, from https://www.python.org/downloads/)
+	- In a command prompt, (not anaconda terminal) type 'where python' on windows, or in a mac terminal type 'which python'
+	- Copy and paste the full path that it prints out
+		- On windows it should look something like: 'C:\<some path stuff>\Python\Python310\python.exe'
+		- In spider, go to tools > preferences > python interpreter
+		- Select 'Use the following Python interpreter:'
+		- Paste in the path you copied earlier from the terminal
+		- Click apply and ok, and restart spyder for changes to take effect
 
 
 ![Figure 1 - pyQCM-BraTaDio UI for reference](https://iili.io/J7rm8Wg.png)
@@ -98,6 +122,8 @@ There are two methods for downloading the package.
 	- This refers to the equilibrium time used to shift the data by.
 	- For testing purposes, it is appropriate to enter 0-100 (in seconds) as a sample baseline time.
 	- In practice, this should be the last x number of seconds where the frequency is stable before the experiment begins.
+	- Alternatively, click 'Select Baseline Interactively' to choose the baseline on a preview plot of your data.
+		- Drag the green/red bars to the start and end of the stable baseline region, then click 'Apply' to fill in the baseline time entries (or 'Cancel' to keep the previous values).
 - Next is to specify theoretical or calibration values for calculations in the modeling section.
 	- If user selects theoretical, it will use theoretical peak frequency values and theoretical mass sensitivity constant, C = -17.7 ng/(Hz*cm^2) for Sauerbrey model.
 	- If user selects calibration, there is the prompt to either:
@@ -162,6 +188,11 @@ There are two methods for downloading the package.
 - Additional options include:
 	- Drift correction.
 			- Finds slope (drift) of baseline, and rotates all points by the amount required to flatten the baseline.
+	- Plot derivatives.
+		- Available when shifted (reference level adjusted) data is selected.
+		- Plots the time derivatives of Δf and ΔD along with the smoothed signals, both computed with a Savitzky-Golay filter.
+		- Saved to 'qcmd-plots' as 'derivative_deltaf_plot', 'derivative_deltad_plot', 'smoothed_deltaf_plot', and 'smoothed_deltad_plot'.
+		- Click 'Export derivative CSVs' and choose a folder to save the smoothed signals and derivatives of each selected overtone as CSV files.
 	- Interactive plot (further detailed below).
 	- Modeling/further analysis (further detailed below).  
 
@@ -222,13 +253,33 @@ Known errors (originating from erroneous user input) will be displayed in a popu
 	- Solution 3 (Using crystal thickness model): Unlike all the other models, crystal thickness uses the RAW overtone selection, so make sure the overtones you want to analyze the crystal thickness of, are selected in the raw data overtones column.
 
 
+## Citing
+
+If you use pyQCM-BraTaDio in your work, please cite the JOSS paper:
+
+> Pardi, B., Ahmed, S. T., Jonguitud Flores, S., Flores, W., Friedt, J.-M., Mears, L. L. E., Yáñez Soto, B., & Andresen Eguiluz, R. C. (2024). pyQCM-BraTaDio: A tool for visualization, data mining, and modelling of Quartz crystal microbalance with dissipation data. *Journal of Open Source Software*, 9(99), 6831. https://doi.org/10.21105/joss.06831
+
+```bibtex
+@article{Pardi2024pyQCM,
+  title   = {pyQCM-BraTaDio: A tool for visualization, data mining, and modelling of Quartz crystal microbalance with dissipation data},
+  author  = {Pardi, Brandon and Ahmed, Syeda Tajin and Jonguitud Flores, Silvia and Flores, Warren and Friedt, Jean-Michel and Mears, Laura L. E. and Y{\'a}{\~n}ez Soto, Bernardo and Andresen Eguiluz, Roberto C.},
+  journal = {Journal of Open Source Software},
+  year    = {2024},
+  volume  = {9},
+  number  = {99},
+  pages   = {6831},
+  doi     = {10.21105/joss.06831}
+}
+```
+
+
 # Testing
 
 ## Automated Testing
 **Warning:** Before testing, make sure any data and plots are saved elsewhere, as tests will overwrite data/plots.
 
 3 test scripts are available. To run them, ensure you have pytest and pillow installed first: `pip install pytest==8.1.1 pillow==10.3.0`. Pillow is used for checking plot generations against verified sample plots.
-To test the suite, from the BraTaDio root directory use: `pytest src/test/`.
+To test the suite, from the repository root directory use: `pytest src/test/`.
 
 ## Manual Testing
 
