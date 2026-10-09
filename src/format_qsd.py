@@ -98,6 +98,27 @@ def _find_first_block(d, start):
     raise ValueError("Could not find any resonance data in .qsd file")
 
 
+def _iter_blocks(d):
+    """yield (byte offset, resonance index, n, segments, (time, freq, dis)) for each block of the first sensor"""
+    pointer = _find_first_block(d, d.rindex(b'XtalDriveTimeFloat'))
+    last_idx = -1
+    while d[pointer:pointer + 4] == BLOCK_TAG:
+        offset = pointer
+        header = _parse_block_header(d, pointer + 4)
+        # resonance indices only increase within one sensor, stop at the next sensor's data
+        if header is None or header[0] <= last_idx:
+            break
+        idx, n, segs, pointer = header
+        last_idx = idx
+        arrays = ()
+        if n > 0:
+            tim, pointer = _read_array(d, pointer, n)
+            fre, pointer = _read_array(d, pointer, n)
+            dis, pointer = _read_array(d, pointer, n)
+            arrays = (tim, fre, dis)
+        yield offset, idx, n, segs, arrays
+
+
 def read_qsd(filename):
     """read time, frequency, and dissipation of each recorded resonance of the first sensor
 
@@ -111,24 +132,7 @@ def read_qsd(filename):
         d = f.read()
 
     overtone_map = _read_overtone_map(d)
-    settings_end = d.rindex(b'XtalDriveTimeFloat')
-    pointer = _find_first_block(d, settings_end)
-
-    blocks = []
-    last_idx = -1
-    while d[pointer:pointer + 4] == BLOCK_TAG:
-        header = _parse_block_header(d, pointer + 4)
-        # resonance indices only increase within one sensor, stop at the next sensor's data
-        if header is None or header[0] <= last_idx:
-            break
-        idx, n, segs, pointer = header
-        last_idx = idx
-        if n == 0:
-            continue
-        tim, pointer = _read_array(d, pointer, n)
-        fre, pointer = _read_array(d, pointer, n)
-        dis, pointer = _read_array(d, pointer, n)
-        blocks.append((idx, segs, tim, fre, dis))
+    blocks = [(idx, segs, *arrays) for _, idx, n, segs, arrays in _iter_blocks(d) if n > 0]
 
     if not blocks:
         raise ValueError("No recorded resonances found in .qsd file")
@@ -164,3 +168,36 @@ def extract_sensor_data(time, freq, dis, overtones):
 
     df = df.loc[(df >= 1e-8).all(axis=1)]
     return df
+
+
+def describe_qsd(filename):
+    """print the resonance blocks of a .qsd file: overtone, sample count, and recording segments
+
+    A block with more than one segment has gaps (samples missing between segments),
+    e.g. when the instrument briefly lost that resonance.
+    """
+    with open(filename, 'rb') as f:
+        d = f.read()
+
+    overtone_map = _read_overtone_map(d)
+    blocks = list(_iter_blocks(d))
+    grid_len = max((s + l for *_, segs, _ in blocks for s, l in segs), default=0)
+    print(f"{filename}: {len(blocks)} resonance blocks, {grid_len} samples on shared grid")
+    for offset, idx, n, segs, _ in blocks:
+        overtone = overtone_map.get(idx, 2 * idx + 1)
+        if n == 0:
+            status = "not recorded"
+        else:
+            covered = set()
+            for start, length in segs:
+                covered.update(range(start, start + length))
+            missing = sorted(set(range(grid_len)) - covered)
+            gaps = f", missing samples {missing[:10]}{' ...' if len(missing) > 10 else ''}" if missing else ""
+            status = f"n={n}, segments (start, length) = {segs}{gaps}"
+        print(f"  byte {offset:>9}  Resonance_{idx} (overtone {overtone}): {status}")
+
+
+if __name__ == '__main__':
+    import sys
+    for qsd_file in sys.argv[1:]:
+        describe_qsd(qsd_file)
