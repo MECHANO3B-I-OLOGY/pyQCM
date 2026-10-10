@@ -24,6 +24,7 @@ from src.format_file import format_raw_data
 from src.modeling import thin_film_liquid_analysis, thin_film_air_analysis, sauerbrey, avgs_analysis, gordon_kanazawa, crystal_thickness
 from src.interactive_baseline_graph import display_interactive_plot
 from src.frozen_workdir import setup_frozen_workdir
+from src.ui_text import ui_text
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -1036,7 +1037,7 @@ class ModelingWindow(tk.Frame):
         self.run_sauerbrey_analysis_button.grid(row=9, column=0, pady=4)
 
         # avg change in freq and dis against overtone button
-        self.avgs_analysis = tk.Button(self.models_frame, text="Plot average Δf and ΔD\n of overtones", padx=6, pady=4, width=20,
+        self.avgs_analysis = tk.Button(self.models_frame, text=ui_text("Plot average Δf and ΔD\n of overtones"), padx=6, pady=4, width=20,
                                              command=lambda: self.call_averages())
         self.avgs_analysis.grid(row=8, column=0, pady=4)
 
@@ -1239,7 +1240,7 @@ class PlotOptsWindow():
         + "Note: units of time rely on units specified above,\n" \
         + "frequency bounds are in terms of Δf (Hz), not f,\n" \
         + "and dissipation bounds are in terms of (your number) E-6"
-        self.bounds_label = tk.Label(self.bounds_frame, text=bounds_label_text)
+        self.bounds_label = tk.Label(self.bounds_frame, text=ui_text(bounds_label_text))
         self.bounds_label.grid(row=0, column=0, columnspan=4, pady=8)
         self.time_lower_bound_label = tk.Label(self.bounds_frame, text="Time Lower: ")
         self.time_lower_bound_label.grid(row=1, column=0, padx=4, pady=4)
@@ -1614,7 +1615,7 @@ class Col3(tk.Frame):
         self.is_visible = True
         self.container = container
         self.plot_clean_data_var = tk.IntVar()
-        self.plot_clean_data_check = tk.Checkbutton(self, text="Shifted Data Overtone Selection\n(Δf and ΔD)", font=('TkDefaultFont', 12, 'bold'), variable=self.plot_clean_data_var, onvalue=1, offvalue=0, command=self.receive_clean_checkboxes)
+        self.plot_clean_data_check = tk.Checkbutton(self, text=ui_text("Shifted Data Overtone Selection\n(Δf and ΔD)"), font=('TkDefaultFont', 12, 'bold'), variable=self.plot_clean_data_var, onvalue=1, offvalue=0, command=self.receive_clean_checkboxes)
         self.plot_clean_data_check.grid(row=0, column=0, pady=(12,8), padx=(32,16))
         self.which_clean_channels_label = tk.Label(self, text="Select overtones for\nbaseline corrected data")
         self.grid_rowconfigure(0, weight=1)
@@ -1725,13 +1726,13 @@ class Col4(tk.Frame):
 
         # miscellaneous plot options
         self.plot_dF_dD_together_var = tk.IntVar()
-        self.plot_dF_dD_together_check = tk.Checkbutton(self, text="Plot Δf and ΔD together", variable=self.plot_dF_dD_together_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
+        self.plot_dF_dD_together_check = tk.Checkbutton(self, text=ui_text("Plot Δf and ΔD together"), variable=self.plot_dF_dD_together_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
         self.plot_dF_dD_together_check.grid(row=2, column=4)
         self.normalize_F_var = tk.IntVar()
-        self.normalize_F_check = tk.Checkbutton(self, text="Normalize Δf with its\nrespective overtone", variable=self.normalize_F_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
+        self.normalize_F_check = tk.Checkbutton(self, text=ui_text("Normalize Δf with its\nrespective overtone"), variable=self.normalize_F_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
         self.normalize_F_check.grid(row=3, column=4)
         self.plot_dD_v_dF_var = tk.IntVar()
-        self.plot_dD_v_dF_check = tk.Checkbutton(self, text="Plot ΔD vs Δf", variable=self.plot_dD_v_dF_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
+        self.plot_dD_v_dF_check = tk.Checkbutton(self, text=ui_text("Plot ΔD vs Δf"), variable=self.plot_dD_v_dF_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
         self.plot_dD_v_dF_check.grid(row=4, column=4)
         self.plot_temp_v_time_var = tk.IntVar()
         self.plot_temp_v_time_check = tk.Checkbutton(self, text="Plot temperature vs time", variable=self.plot_temp_v_time_var, onvalue=1, offvalue=0, command=self.receive_optional_checkboxes)
@@ -1922,6 +1923,9 @@ def run_smoke_test(app):
     for fn in ('raw_data/Formatted-QSM-I-BSA_1mgpml.csv', 'raw_data/Formatted-BSA.1mgml-1.280723_QSD.csv'):
         if not os.path.exists(fn):
             raise FileNotFoundError(f"smoke test: expected formatted output '{fn}' was not written")
+    # the bundled Tk must be able to draw special characters (would show e.g. 'Δf' for 'Δf' otherwise)
+    if ui_text('Δ') != 'Δ':
+        raise RuntimeError("smoke test: the bundled Tk cannot draw special characters like Delta, check its font support")
     print("SMOKE TEST PASSED")
     app.after(2000, app.destroy)
 

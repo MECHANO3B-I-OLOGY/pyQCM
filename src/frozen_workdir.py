@@ -47,7 +47,7 @@ def candidate_workdirs():
         # the executable lives inside pyQCM.app/Contents/MacOS, which may be read-only (/Applications, translocated downloads)
         return [documents, home]
 
-    # Windows: keep data next to the exe, as laid out in the release zip
+    # Windows/Linux: keep data next to the executable, as laid out in the release archive
     exe_dir = Path(sys.executable).resolve().parent
     return [exe_dir, documents, home]
 

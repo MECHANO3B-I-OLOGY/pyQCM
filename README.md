@@ -4,7 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/MECHANO3B-I-OLOGY/pyQCM?label=download)](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest)
 [![Build](https://github.com/MECHANO3B-I-OLOGY/pyQCM/actions/workflows/build.yml/badge.svg)](https://github.com/MECHANO3B-I-OLOGY/pyQCM/actions/workflows/build.yml)
 
-pyQCM-BraTaDio is free, open-source software for visualization, data mining, and modelling of QCM-D data from several instrument manufacturers. **Windows and macOS users can [download the standalone app](#installation), no Python required.**
+pyQCM-BraTaDio is free, open-source software for visualization, data mining, and modelling of QCM-D data from several instrument manufacturers. **Windows, macOS, and Linux users can [download the standalone app](#installation), no Python required.**
 
 > **Version note:** The version reviewed and published in the [JOSS paper](https://doi.org/10.21105/joss.06831) is tag
 > [`b.1.2.6`](https://github.com/MECHANO3B-I-OLOGY/pyQCM/tree/b.1.2.6), permanently archived on [Zenodo](https://doi.org/10.5281/zenodo.12668677).
@@ -23,7 +23,9 @@ Contributed by [Brandon Pardi](https://github.com/b-pardi):
 - More robust reading of raw QSense `.qsd` files: detects which overtones were actually exported, and handles recordings where overtones were briefly interrupted (data saved in two sections instead of one)
 - `.qsd` inspection utility for troubleshooting: `python -m src.format_qsd <file.qsd>` (from the repository root) prints where each overtone's data block is in the file and any missing samples
 - Bug fixes for the thin film models and `.qsd` time alignment
-- Standalone app packaging fixes: Intel Mac builds, a per-user data folder so the apps work wherever they are launched from, and automated launch tests
+- **Standalone Linux app** (x86_64), no Python installation needed
+- More robust standalone app builds and releases: fixed the macOS app crashing on launch and added Intel Mac builds; the apps now set up their data folder wherever they are launched from without overwriting your saved settings; every build is launch-tested on Windows, macOS, and Linux before it can be released; build tools are pinned for reproducible builds; and all apps are attached automatically to each GitHub Release
+- Special characters (e.g. Δ, °, ²) display correctly on every platform: if a Linux Python's Tk cannot draw them, the UI shows readable equivalents (e.g. "Delta f") instead of escape codes, and plots fall back to a font that has them if the chosen plot font does not
 
 See the [Releases page](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases) for details on each version.
 
@@ -39,7 +41,10 @@ Please continue below for instructions on using the software.
 
 ## Important Notes before Starting
 ### Supported systems
-- The standalone apps support Windows 10/11 and macOS (Apple Silicon Macs on macOS 12 or newer, Intel Macs on macOS 11 or newer).
+- The standalone apps support:
+	- Windows 10/11
+	- macOS: Apple Silicon Macs on macOS 12 or newer, Intel Macs on macOS 11 or newer
+	- Linux (x86_64) distributions with glibc 2.35 or newer (e.g. Ubuntu 22.04+, Debian 12+, Fedora 36+, Linux Mint 21+). Check with `ldd --version`
 - Running from source works on Windows, macOS, and Linux with **Python 3.10** (see [Installation](#installation)).
 - Please [open an issue](https://github.com/MECHANO3B-I-OLOGY/pyQCM/issues) if you run into an incompatibility.
 
@@ -52,12 +57,13 @@ Please continue below for instructions on using the software.
 
 ## Installation
 ### Option 1: Standalone app (recommended, no Python needed)
-1. Go to the [latest release](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest) and, under **Assets**, download the zip file for your computer:
+1. Go to the [latest release](https://github.com/MECHANO3B-I-OLOGY/pyQCM/releases/latest) and, under **Assets**, download the file for your computer:
 	- Windows: `pyQCM-Windows.zip`
 	- Mac with Apple Silicon (M1, M2, M3, ...): `pyQCM-macOS-apple-silicon.zip`
 	- Mac with an Intel processor: `pyQCM-macOS-intel.zip`
 		- Not sure which Mac you have? Apple menu > About This Mac, and look at "Chip" or "Processor".
-2. Extract (unzip) the file. **Do not run the app from inside the zip file.**
+	- Linux (x86_64): `pyQCM-Linux-x86_64.tar.gz`
+2. Extract the file. **Do not run the app from inside the zip/archive file.**
 
 #### Windows
 - Move the extracted `pyQCM-Windows` folder somewhere you can write to, such as Documents or Desktop (not Program Files).
@@ -73,8 +79,19 @@ Please continue below for instructions on using the software.
 - The app keeps its data folders (`raw_data`, `qcmd-plots`, `selected_ranges`, `offset_data`, `plot_opts`, `sample_generations`) in **Documents/pyQCM** (or in a `pyQCM` folder in your home folder if Documents access was not allowed). These are the folders referred to throughout this README.
 - To see progress messages and errors (e.g. for a bug report), start the app from Terminal: `/Applications/pyQCM.app/Contents/MacOS/pyQCM`
 
-### Option 2: Run from source (developers, contributors, and Linux users)
+#### Linux
+- Extract the archive somewhere you can write to, e.g. your home folder, and start the app from a terminal:
+	- `tar -xzf pyQCM-Linux-x86_64.tar.gz`
+	- `cd pyQCM-Linux-x86_64`
+	- `./pyQCM`
+- Progress messages and errors are shown in the terminal it was started from.
+- On first launch the app creates its data folders (`raw_data`, `qcmd-plots`, `selected_ranges`, `offset_data`, `plot_opts`, `sample_generations`) next to the `pyQCM` executable. These are the folders referred to throughout this README.
+- The 'Open plots folder' button uses `xdg-open`; if it does nothing, install your distribution's `xdg-utils` package.
+- If your distribution is older than those listed under [Supported systems](#supported-systems) (the app fails to start with a `GLIBC` version error), run from source instead (Option 2).
+
+### Option 2: Run from source (developers, contributors, and older Linux distributions)
 Requires **Python 3.10**, as the pinned dependencies do not install on newer Python versions. Get it from https://www.python.org/downloads/ if needed. On Linux, also install tkinter (e.g. `sudo apt install python3-tk`).
+- **Linux note:** some Python installations, including Anaconda/Miniconda and other standalone Python builds, include a Tk that cannot draw special characters like Δ. pyQCM then shows readable equivalents in the UI (e.g. "Delta f") and prints a note in the terminal; plots are not affected. To see the proper characters, use your distribution's Python 3.10 with its tkinter package (e.g. on Ubuntu 22.04, `python3` with `sudo apt install python3-tk`), or use the standalone Linux app.
 - Get the code
 	- With git: `git clone https://github.com/MECHANO3B-I-OLOGY/pyQCM.git`, then `cd pyQCM`
 	- Without git: on the repository page click **Code > Download ZIP**, extract it, and in a terminal `cd "<path to the extracted folder>"` (with the quotes)
