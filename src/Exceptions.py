@@ -1,11 +1,13 @@
 from tkinter import messagebox
 
+from src.ui_text import ui_text
+
 def error_popup(msg=None):
     msg = "Uncaught unknown exception has occurred, please view the terminal for details" if msg == None else msg
-    messagebox.showerror("Error", msg)
+    messagebox.showerror("Error", ui_text(str(msg)))
 
 def warning_popup(msg):
-    messagebox.showwarning("Warning", msg)
+    messagebox.showwarning("Warning", ui_text(str(msg)))
 
 class ShapeMismatchException(Exception):
     def __init__(self, shapes, msg):

@@ -188,8 +188,11 @@ def get_plot_preferences():
     '''opens plot customization json file and returns dictionary of values'''
 
     with open ("plot_opts/plot_customizations.json", 'r') as fp:
-        plot_customs = json.load(fp)  
-    return plot_customs  
+        plot_customs = json.load(fp)
+    # matplotlib falls back per character to the next font in the list, so symbols like Δ, °, and ² still render
+    # if the chosen font lacks them (DejaVu Sans is bundled with matplotlib, so it is always available)
+    plot_customs['font'] = [plot_customs['font'], 'DejaVu Sans']
+    return plot_customs
 
 
 

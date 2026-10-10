@@ -12,6 +12,8 @@ from tkinter import ttk
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from main import App, Col1, Col2, Col3, Col4
+from src.ui_text import ui_text, ascii_equivalent, can_render
+import tkinter.font as tkfont
 
 @pytest.fixture
 def app():
@@ -82,7 +84,7 @@ def test_ui_spawns(app):
     
     # Simulate checkbox click and check if other boxes show
     assert isinstance(col3.plot_clean_data_check, tk.Checkbutton)
-    assert col3.plot_clean_data_check.cget('text') == 'Shifted Data Overtone Selection\n(Δf and ΔD)'
+    assert col3.plot_clean_data_check.cget('text') == ui_text('Shifted Data Overtone Selection\n(Δf and ΔD)')
     col3.plot_clean_data_var.set(True)
     assert col3.clean_checks[0].checkbutton.cget('text') == '1st frequency'
     
@@ -101,6 +103,27 @@ def test_ui_spawns(app):
     col4.open_model_window_button.invoke()
     col4.update()
     col4.modelling_window.test_modelling_window() # will fail if modelling window didn't open
+
+
+def test_special_chars_drawable_or_ascii(app):
+    # every special character used in the UI must either be drawable by this Tk, or be replaced with ASCII
+    # (some Linux Tk builds can only use X11 core fonts and would otherwise show e.g. 'Δf' for 'Δf')
+    font = tkfont.nametofont('TkDefaultFont')
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    ui_sources = [os.path.join(root_dir, 'main.py'), os.path.join(root_dir, 'src', 'Exceptions.py')]
+    special_chars = {ch for fp in ui_sources for ch in open(fp, encoding='utf-8').read() if not ch.isascii()}
+    for ch in special_chars:
+        shown = ui_text(ch)
+        if can_render(ch, font):
+            assert shown == ch
+        else:
+            assert shown.isascii(), f"{ch!r} cannot be drawn by this Tk and has no ASCII fallback"
+
+def test_ascii_equivalents():
+    assert ascii_equivalent('Δ') == 'Delta '
+    assert ascii_equivalent('²') == '^2'
+    assert ascii_equivalent('é') == 'e'
+    assert ascii_equivalent('☃') == '?'
 
 
 if __name__ == "__main__":
